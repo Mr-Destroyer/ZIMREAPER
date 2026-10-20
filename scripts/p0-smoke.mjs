@@ -99,7 +99,7 @@ try {
   check("fixture site is up", true, `port ${FIXTURE_PORT}`);
 
   backend = await core.launchCdpBackend({
-    executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
+    executablePath: chromiumPath(),
     headless: !HEADED,
   });
   check("chromium launched over CDP", true, backend.name);

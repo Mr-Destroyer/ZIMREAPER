@@ -8,7 +8,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,8 +18,28 @@ jobs:
       - run: npm ci
       - run: npx tsc -b
       - run: npm test
+
+      # The smoke/check scripts drive a real browser over CDP. A bare ubuntu runner has no
+      # system chromium, so use the one Playwright just installed and point every script at it
+      # through ZIMREAPER_CHROMIUM.
       - run: npx playwright install --with-deps chromium
+      - name: Point scripts at the installed chromium
+        run: |
+          CHROME="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          echo "using $CHROME"
+          echo "ZIMREAPER_CHROMIUM=$CHROME" >> "$GITHUB_ENV"
+
       - run: node scripts/p0-smoke.mjs
       - run: node scripts/mcp-check.mjs
       - run: node scripts/capabilities-check.mjs
       - run: node scripts/replay-check.mjs
+
+      - name: Upload check logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-logs
+          path: |
+            /tmp/*.log
+          if-no-files-found: ignore
+          retention-days: 7
