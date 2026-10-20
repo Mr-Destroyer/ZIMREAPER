@@ -6,6 +6,7 @@
  *   zimreaper attach <cdp-endpoint>                                drive existing Chromium
  *   zimreaper info                                                 session + tabs
  *   zimreaper audit verify                                         check audit hash chain
+ *   zimreaper replay <trace.jsonl> [--url U]                       re-run a recorded trace
  */
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
@@ -20,6 +21,7 @@ Usage:
   zimreaper attach <cdp-endpoint>
   zimreaper info
   zimreaper audit verify [--dir ~/.zimreaper]
+  zimreaper replay <trace.jsonl> [--url U] [--continue] [--no-hash-check] [--json]
   zimreaper --help
 
 Commands:
@@ -29,6 +31,8 @@ Commands:
   attach   Start a control server around an existing Chromium debug endpoint.
   info     Show the running session and its tabs.
   audit    Verify the hash-chained audit log.
+  replay   Re-run a recorded trace as a test. Refs are re-bound by role and name, so a trace
+           recorded yesterday still drives the right element today. Exits 1 on any divergence.
 
 Environment:
   OPENAI_API_KEY, ANTHROPIC_API_KEY, or ZIMREAPER_API_KEY

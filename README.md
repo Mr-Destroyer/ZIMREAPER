@@ -23,6 +23,7 @@ P0 is green end to end. Verified on this machine with real Chromium, real input 
 | Electron shell boot | `ZIMREAPER_HEADLESS_SMOKE=1 npm start -w @zimreaper/desktop` | `desktop-ready 7420` |
 | HUD DOM (tabs, HUD, event stream) | `node scripts/shot.mjs` | 1 tab, 13 controls, live event feed |
 | Superhuman capabilities | `node scripts/capabilities-check.mjs` | 6/6 checks |
+| Record -> replay -> divergence | `node scripts/replay-check.mjs` | 4/4 checks |
 
 Superhuman capabilities, each verified against the fixture site:
 
@@ -42,9 +43,26 @@ dispatches `mouseMoved → mousePressed → mouseReleased`, typing goes through
 in a hash-chained audit log, and a click on an unknown origin is refused with
 `BLOCKED_BY_POLICY` under strict policy.
 
-Not done yet (see `PLAN.md` phases P1–P3): deterministic replay, page watches while the app is
-closed, parallel tab fleets, packaged installers, VLM-backed `vision.ground` (today it is a
-name/role match against the snapshot), and site playbooks.
+### Replay
+
+`@zimreaper/replay` records an agent run as JSONL and re-runs it as a test. Refs are session
+scoped, so every recorded target also stores the element's role, accessible name and ordinal;
+the player re-binds the ref by identity before acting. When the page no longer matches the
+recorded hash, the player reports a divergence and refuses to click blind.
+
+```bash
+node scripts/replay-check.mjs                       # record, replay in a fresh tab, prove divergence
+zimreaper replay trace.jsonl --url http://host/login # exits 1 on any divergence or failed step
+zimreaper replay trace.jsonl --continue --json       # keep going past divergence, machine output
+```
+
+Verified: 6 steps recorded with 3 ref identities and 2 checkpoints, 6/6 replayed in a fresh tab in
+1.9s with the same end state, and the same trace against a different page yields
+`page-hash` divergence with zero clicks dispatched.
+
+Not done yet (see `PLAN.md` phases P1–P3): page watches while the app is closed, parallel tab
+fleets, packaged installers, VLM-backed `vision.ground` (today it is a name/role match against
+the snapshot), and site playbooks.
 
 ## Quick start
 
@@ -65,6 +83,7 @@ node scripts/mcp-check.mjs # exercise the MCP tools
 ```
 packages/protocol     zod schemas, error taxonomy (frozen)
 packages/perception   AX snapshot, refs, SoM, diff, budget
+packages/replay       record/replay traces, ref re-binding, divergence detection
 packages/policy       trust tiers, approvals, audit chain
 packages/core         Backend (CDP/Electron), executor, control server + client
 packages/agent        provider-agnostic loop

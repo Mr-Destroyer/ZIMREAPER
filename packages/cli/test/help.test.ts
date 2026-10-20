@@ -7,7 +7,7 @@ import { HELP } from "../src/bin.js";
 
 const execFileAsync = promisify(execFile);
 
-const COMMANDS = ["mcp", "run", "attach", "info", "audit verify"];
+const COMMANDS = ["mcp", "run", "attach", "info", "audit verify", "replay"];
 
 // Nested Node script execution is blocked in the Codex sandbox (child exits 0 with no
 // output), so exec assertions are skipped there but run normally in CI/dev machines.

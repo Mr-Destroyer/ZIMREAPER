@@ -25,7 +25,8 @@
     "@zimreaper/agent": "*",
     "@zimreaper/mcp-server": "*",
     "@zimreaper/policy": "*",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@zimreaper/replay": "*"
   },
   "bin": {
     "zimreaper": "./dist/bin.js"

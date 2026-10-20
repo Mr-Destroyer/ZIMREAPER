@@ -22,3 +22,4 @@ jobs:
       - run: node scripts/p0-smoke.mjs
       - run: node scripts/mcp-check.mjs
       - run: node scripts/capabilities-check.mjs
+      - run: node scripts/replay-check.mjs

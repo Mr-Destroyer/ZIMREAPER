@@ -16,6 +16,7 @@ import {
   type ControlServer,
 } from "@zimreaper/core";
 import { browserTools, runStdio } from "@zimreaper/mcp-server";
+import { TracePlayer, loadTrace } from "@zimreaper/replay";
 import { AuditLog } from "@zimreaper/policy";
 import { ZimReaperError, type SessionInfo, type TabInfo } from "@zimreaper/protocol";
 
@@ -407,6 +408,53 @@ async function commandAudit(parsed: ParsedArgs): Promise<number> {
   return 1;
 }
 
+async function commandReplay(parsed: ParsedArgs): Promise<number> {
+  const tracePath = parsed.positional[1];
+  if (!tracePath) {
+    throw new ZimReaperError("BAD_REQUEST", "usage: zimreaper replay <trace.jsonl> [--url <start>] [--continue]");
+  }
+  const trace = await loadTrace(tracePath);
+  const { url, token } = await resolveConnection(parsed.flags);
+  const client = await ControlClient.connect({ url, token, client: "cli-replay" });
+  try {
+    const startUrl = flagString(parsed.flags, "url");
+    if (startUrl) {
+      await client.act({ kind: "nav.goto", url: startUrl, waitUntil: "load" }, { timeoutMs: 60_000 });
+    }
+    const json = parsed.flags.get("json") === true;
+    const player = new TracePlayer(client, trace, {
+      checkHashes: parsed.flags.get("no-hash-check") !== true,
+      stopOnDivergence: parsed.flags.get("continue") !== true,
+      onStep: json
+        ? undefined
+        : (step, report) => {
+            const done = report.passed + report.failed;
+            process.stdout.write(
+              `${String(done).padStart(2)}/${report.total}  ${step.action.kind.padEnd(14)} ${step.ok ? "ok" : "FAIL"}  ${step.ms}ms\n`,
+            );
+          },
+    });
+    const report = await player.play();
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ trace: tracePath, ...report }, null, 2)}\n`);
+    } else {
+      process.stdout.write(
+        `\n${report.passed}/${report.total} steps replayed in ${report.durationMs}ms` +
+          `${report.divergences.length ? `, ${report.divergences.length} divergence(s)` : ""}\n`,
+      );
+      for (const divergence of report.divergences) {
+        process.stderr.write(
+          `DIVERGED step ${divergence.seq} (${divergence.reason}): expected ${divergence.expected ?? "?"}, got ${divergence.actual ?? "?"}` +
+            `${divergence.detail ? ` — ${divergence.detail}` : ""}\n`,
+        );
+      }
+    }
+    return report.failed === 0 && report.divergences.length === 0 ? 0 : 1;
+  } finally {
+    client.close();
+  }
+}
+
 export async function runCommand(command: string, parsed: ParsedArgs): Promise<number> {
   switch (command) {
     case "mcp":
@@ -419,6 +467,8 @@ export async function runCommand(command: string, parsed: ParsedArgs): Promise<n
       return commandInfo(parsed);
     case "audit":
       return commandAudit(parsed);
+    case "replay":
+      return commandReplay(parsed);
     default:
       throw new ZimReaperError("BAD_REQUEST", `unknown command: ${command}; see zimreaper --help`);
   }
