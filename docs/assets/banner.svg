@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="ZIMREAPER — the browser your agent can actually drive">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070a0f"/>
+      <stop offset="55%" stop-color="#0a0e15"/>
+      <stop offset="100%" stop-color="#0b0f18"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.14" cy="0.18" r="0.55">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.88" cy="0.9" r="0.5">
+      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="22%" stop-color="#22d3ee" stop-opacity="0.9"/>
+      <stop offset="55%" stop-color="#a78bfa" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="markStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="60%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#fb7185"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.6" stroke-opacity="0.55"/>
+    </pattern>
+    <clipPath id="frame"><rect x="0" y="0" width="1280" height="320" rx="0"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1280" height="320" fill="url(#bg)"/>
+    <rect width="1280" height="320" fill="url(#grid)"/>
+    <rect width="1280" height="320" fill="url(#glowA)"/>
+    <rect width="1280" height="320" fill="url(#glowB)"/>
+    <rect x="0" y="0" width="1280" height="3" fill="url(#rule)"/>
+
+    <!-- mark: hexagon aperture with a blade slash -->
+    <g transform="translate(1032 160)" fill="none" stroke="url(#markStroke)" stroke-width="2.2">
+      <path d="M 0 -96 L 83 -48 L 83 48 L 0 96 L -83 48 L -83 -48 Z" stroke-opacity="0.75"/>
+      <path d="M 0 -62 L 54 -31 L 54 31 L 0 62 L -54 31 L -54 -31 Z" stroke-opacity="0.35"/>
+      <path d="M -44 44 L 44 -44" stroke-width="5" stroke-linecap="round"/>
+      <path d="M -30 18 L 30 -18" stroke-width="2" stroke-opacity="0.5"/>
+    </g>
+    <g transform="translate(1032 160)" fill="#0b0f18" stroke="#22d3ee" stroke-opacity="0.8">
+      <circle cx="-104" cy="0" r="3"/>
+      <circle cx="104" cy="0" r="3"/>
+      <circle cx="0" cy="-112" r="3"/>
+      <circle cx="0" cy="112" r="3"/>
+    </g>
+
+    <!-- wordmark -->
+    <g font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+      <text x="80" y="132" fill="#f8fafc" font-size="74" font-weight="800" letter-spacing="6">ZIMREAPER</text>
+      <text x="82" y="178" fill="#cbd5e1" font-size="25" font-weight="400" letter-spacing="0.4">The browser your agent can actually drive.</text>
+    </g>
+    <g font-family="ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#94a3b8" letter-spacing="1.2">
+      <text x="82" y="232">REAL MOUSE</text>
+      <text x="196" y="232" fill="#334155">·</text>
+      <text x="216" y="232">REAL KEYBOARD</text>
+      <text x="372" y="232" fill="#334155">·</text>
+      <text x="392" y="232">PROXY-FIRST</text>
+      <text x="528" y="232" fill="#334155">·</text>
+      <text x="548" y="232">REPLAYABLE POCS</text>
+      <text x="716" y="232" fill="#334155">·</text>
+      <text x="736" y="232">MCP</text>
+    </g>
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
+      <rect x="82" y="252" width="150" height="26" rx="13" fill="#0f172a" stroke="#1e293b"/>
+      <circle cx="98" cy="265" r="3.5" fill="#34d399"/>
+      <text x="110" y="270" fill="#94a3b8">ws://127.0.0.1</text>
+      <rect x="244" y="252" width="132" height="26" rx="13" fill="#0f172a" stroke="#1e293b"/>
+      <circle cx="260" cy="265" r="3.5" fill="#22d3ee"/>
+      <text x="272" y="270" fill="#94a3b8">CDP · Chromium</text>
+    </g>
+  </g>
+</svg>
