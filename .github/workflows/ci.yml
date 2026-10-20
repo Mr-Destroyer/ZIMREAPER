@@ -9,6 +9,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Ubuntu 24.04 restricts unprivileged user namespaces via AppArmor, which makes Chromium's
+      # sandbox unusable for a non-profiled binary on a stock runner. The browser here is
+      # disposable and CI-only, so the sandbox is off; the container/VM boundary is the sandbox.
+      ZIMREAPER_NO_SANDBOX: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
