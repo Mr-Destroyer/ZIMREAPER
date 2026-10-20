@@ -38,6 +38,9 @@ Environment:
   OPENAI_API_KEY, ANTHROPIC_API_KEY, or ZIMREAPER_API_KEY
   ZIMREAPER_PROVIDER_<NAME>_{BASE_URL,API_KEY,MODEL} for custom providers
   ZIMREAPER_HOME (default ~/.zimreaper)
+  ZIMREAPER_PROXY (http://127.0.0.1:8080) route the browser through mitmproxy/Burp/ZAP
+  ZIMREAPER_INSECURE=1 accept the proxy CA (TLS interception)
+  ZIMREAPER_SERVE=1 run the desktop app headless with the control server up
 `;
 
 async function zimError(err: unknown): Promise<ZimReaperErrorType> {

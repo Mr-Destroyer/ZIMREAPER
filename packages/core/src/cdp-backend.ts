@@ -786,6 +786,28 @@ export async function connectCdpBackend(endpoint: string): Promise<Backend> {
   return CdpBackend.open(wsUrl);
 }
 
+/**
+ * Route the browser through an intercepting proxy, the way a hunter actually works.
+ *
+ * ZIMREAPER_PROXY=http://127.0.0.1:8080   mitmproxy / Burp / ZAP
+ * ZIMREAPER_INSECURE=1                    accept the proxy's CA (TLS interception)
+ *
+ * Chromium bypasses proxies for loopback by default, so a local lab or a localhost API target
+ * would silently skip the proxy. `--proxy-bypass-list=<-loopback>` removes that exception; it is
+ * the difference between "captured nothing" and "captured the whole flow".
+ */
+function proxyArgs(): string[] {
+  const proxy = process.env.ZIMREAPER_PROXY?.trim();
+  const args: string[] = [];
+  if (proxy) {
+    args.push(`--proxy-server=${proxy}`, "--proxy-bypass-list=<-loopback>");
+  }
+  if (proxy || process.env.ZIMREAPER_INSECURE === "1") {
+    args.push("--ignore-certificate-errors");
+  }
+  return args;
+}
+
 /** Launch a private Chromium (or attach when `endpoint` is set) and drive it over CDP. */
 export async function launchCdpBackend(opts: CdpBackendOptions = {}): Promise<Backend> {
   if (opts.endpoint) return connectCdpBackend(opts.endpoint);
@@ -794,6 +816,7 @@ export async function launchCdpBackend(opts: CdpBackendOptions = {}): Promise<Ba
   const userDataDir = opts.userDataDir ?? (await mkdtemp(join(tmpdir(), "zimreaper-cdp-")));
   const ownsUserDataDir = opts.userDataDir === undefined;
   const launchArgs = [
+    ...proxyArgs(),
     "--remote-debugging-port=0",
     `--user-data-dir=${userDataDir}`,
     ...(opts.headless === false ? [] : ["--headless=new"]),

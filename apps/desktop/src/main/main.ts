@@ -11,6 +11,16 @@ const headless = smoke;
 
 // Agents drive tabs the user is not looking at, and serve mode has no visible window at all.
 // Without these, Chromium backgrounds the renderer and Input.dispatchMouseEvent never acks.
+// Same proxy contract as the headless path: point the GUI at mitmproxy/Burp and every request
+// the browser makes is captured, including loopback targets.
+if (process.env.ZIMREAPER_PROXY) {
+  app.commandLine.appendSwitch("proxy-server", process.env.ZIMREAPER_PROXY);
+  app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>");
+}
+if (process.env.ZIMREAPER_PROXY || process.env.ZIMREAPER_INSECURE === "1") {
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+}
+
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
 

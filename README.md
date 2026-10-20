@@ -11,22 +11,29 @@ written to a tamper-evident audit log.
 > **YouTube:** [study_hard69](https://www.youtube.com/@study_hard69)
 > Built to be driven by agents — Claude, Hermes, Codex, or anything that speaks MCP.
 
+**Specialised for bug bounty and security testing.** It routes through your intercepting proxy
+(mitmproxy, Burp, ZAP) by default when you ask it to, enforces program scope in a policy file,
+forks authenticated sessions for authorization testing, and turns a proof into a replayable
+regression test. See [Built for bug bounty](#built-for-bug-bounty) and
+[`docs/bug-bounty.md`](docs/bug-bounty.md).
+
 ---
 
 ## Contents
 
 1. [What it actually is](#what-it-actually-is)
-2. [Download and install](#download-and-install)
-3. [First run](#first-run)
-4. [Point your agent at it](#point-your-agent-at-it) — Claude Desktop, Claude Code, Hermes, Codex, Cursor, Cline, generic MCP, raw WebSocket
-5. [Instructions to paste into your agent](#instructions-to-paste-into-your-agent)
-6. [The 21 tools your agent gets](#the-21-tools-your-agent-gets)
-7. [Trust, policy and the kill switch](#trust-policy-and-the-kill-switch)
-8. [Headless / server mode](#headless--server-mode)
-9. [Record and replay](#record-and-replay)
-10. [Troubleshooting](#troubleshooting)
-11. [Build from source](#build-from-source)
-12. [Repo layout](#repo-layout)
+2. [Built for bug bounty](#built-for-bug-bounty)
+3. [Download and install](#download-and-install)
+4. [First run](#first-run)
+5. [Point your agent at it](#point-your-agent-at-it) — Claude Desktop, Claude Code, Hermes, Codex, Cursor, Cline, generic MCP, raw WebSocket
+6. [Instructions to paste into your agent](#instructions-to-paste-into-your-agent)
+7. [The 21 tools your agent gets](#the-21-tools-your-agent-gets)
+8. [Trust, policy and the kill switch](#trust-policy-and-the-kill-switch)
+9. [Headless / server mode](#headless--server-mode)
+10. [Record and replay](#record-and-replay)
+11. [Troubleshooting](#troubleshooting)
+12. [Build from source](#build-from-source)
+13. [Repo layout](#repo-layout)
 
 ---
 
@@ -56,6 +63,50 @@ ZimReaper AppImage  ──  control server (ws://127.0.0.1:7420, bearer token, 0
         ▼
 real Chromium window  ──  real mouse, real keyboard, real wheel
 ```
+
+---
+
+## Built for bug bounty
+
+The browser is where bug bounty actually happens, and the automation built for it was designed for
+something else. Selenium-style DOM clicks miss half of what a modern SPA does; an agent with a real
+browser and a real proxy sees the traffic no API client can guess at.
+
+**1. Your proxy, not a parallel universe.** One switch routes the browser through mitmproxy, Burp or
+ZAP, and it captures loopback too — Chromium normally bypasses proxies for `127.0.0.1`, which is how
+local labs and localhost APIs silently escape capture:
+
+```bash
+export ZIMREAPER_PROXY=http://127.0.0.1:8080     # mitmproxy / Burp / ZAP
+export ZIMREAPER_INSECURE=1                      # accept the proxy CA (TLS interception)
+~/Applications/ZimReaper-0.1.0-x86_64.AppImage
+```
+
+Verified against `mitmdump`: both the headless launch and the packaged GUI captured
+`http://127.0.0.1:4399/login` and `https://example.com` through the proxy, pages rendering normally
+under TLS interception.
+
+**2. Scope as code.** `~/.zimreaper/policy.json` sets a trust tier per origin. Under `mode: strict`
+anything unlisted is read-only, so the agent cannot submit forms on a host you forgot to scope, and
+destructive labels (`pay`, `transfer`, `delete`, `authorize`) pause for approval regardless of tier.
+
+**3. Session forking for authz work.** `browser_fork_session` clones the authenticated tab into
+independent tabs sharing the login — the primitive for parallel IDOR/BOLA testing: same object, two
+identities, diff the responses.
+
+**4. Traffic the UI hides.** `browser_network op=log` shows every XHR/fetch the page fires;
+`op=body` returns the JSON behind a table; `op=route` / `op=replay` rewrite and resend. Most findings
+live in a request the frontend never renders.
+
+**5. PoCs that stay proven.** Record the exploit once, then `zimreaper replay poc.jsonl --url …` is a
+one-command repro for the triager, with an exit code that fails CI if the app drifts.
+
+**6. Evidence.** Hash-chained audit log (`zimreaper audit verify`), annotated screenshots, and a HUD
+that shows every action — you can take the mouse back at any moment, and the agent's next action is
+refused.
+
+Full hunting workflow, including the IDOR recipe and what this is *not*:
+[`docs/bug-bounty.md`](docs/bug-bounty.md).
 
 ---
 
@@ -402,6 +453,8 @@ Exit code is 1 on any divergence or failed step, so it drops straight into CI.
 | `BLOCKED_BY_POLICY` | Origin not trusted for that action | Add the origin to `policy.json` with a tier |
 | `browser_task` needs a model | No provider key | Export `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, or use the MCP tools directly |
 | Tools missing in the client | Client caches MCP tool lists | Restart the client; `AppImage mcp` alone should print nothing and wait |
+| Proxy sees nothing from localhost | Chromium bypasses proxies for loopback | Set `ZIMREAPER_PROXY` (ZimReaper adds `--proxy-bypass-list=<-loopback>` for you) |
+| TLS sites fail under the proxy | Proxy CA not trusted by Chromium | `ZIMREAPER_INSECURE=1` |
 
 Diagnostics:
 
