@@ -822,6 +822,7 @@ export async function launchCdpBackend(opts: CdpBackendOptions = {}): Promise<Ba
     ...(opts.headless === false ? [] : ["--headless=new"]),
     "--no-first-run",
     "--no-default-browser-check",
+    ...(process.env.ZIMREAPER_NO_SANDBOX === "1" ? ["--no-sandbox"] : []),
     "--disable-gpu",
     "--disable-dev-shm-usage",
     ...(opts.args ?? []),
