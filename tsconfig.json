@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/protocol"
+    },
+    {
+      "path": "packages/policy"
+    },
+    {
+      "path": "packages/perception"
+    },
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/agent"
+    },
+    {
+      "path": "packages/mcp-server"
+    },
+    {
+      "path": "packages/cli"
+    },
+    {
+      "path": "apps/desktop"
+    }
+  ]
+}

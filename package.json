@@ -1,0 +1,38 @@
+{
+  "name": "zimreaper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An agentic desktop browser: real input primitives, superhuman perception, one action bus.",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "fixtures/*",
+    "tests/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev:desktop": "npm run dev -w @zimreaper/desktop",
+    "start:desktop": "npm run start -w @zimreaper/desktop",
+    "e2e": "node tests/e2e/run.mjs",
+    "fixture": "node fixtures/site/server.mjs",
+    "cli": "node packages/cli/dist/bin.js"
+  },
+  "allowScripts": {
+    "electron@33.4.11": true,
+    "esbuild@0.28.2": true
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "playwright": "^1.64.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

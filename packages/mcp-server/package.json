@@ -1,0 +1,33 @@
+{
+  "name": "@zimreaper/mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@zimreaper/protocol": "*",
+    "@zimreaper/core": "*",
+    "@zimreaper/agent": "*",
+    "@zimreaper/policy": "*",
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "zod": "^3.25.76",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  }
+}

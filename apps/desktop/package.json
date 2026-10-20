@@ -1,0 +1,28 @@
+{
+  "name": "@zimreaper/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -b && node scripts/build-preload.mjs && vite build",
+    "dev": "node scripts/dev.mjs",
+    "start": "electron .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@zimreaper/core": "*",
+    "@zimreaper/perception": "*",
+    "@zimreaper/policy": "*",
+    "@zimreaper/protocol": "*"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "vite": "^7.0.0",
+    "@vitejs/plugin-react": "^4.6.0"
+  }
+}
