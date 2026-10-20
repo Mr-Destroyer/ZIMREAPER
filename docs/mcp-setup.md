@@ -121,3 +121,29 @@ startup_timeout_sec = 20
 - Payment/send/delete/publish actions always require approval unless the origin is explicitly
   `transact`.
 - `Escape` in the browser window kills all agent activity immediately.
+
+## Tool surface (21)
+
+```
+browser_navigate  goto a URL (load/domcontentloaded/networkidle)
+browser_nav       back, forward, reload, stop
+browser_tabs      list, new, close, activate
+browser_snapshot  token-budgeted AX snapshot with stable refs (e1, e2, ...)
+browser_diff      what changed since a snapshot id
+browser_click     ref/selector/point click with real mouse events
+browser_type      type text into the focused element or a ref
+browser_press     key or chord (Enter, Control+a, Meta+Shift+t)
+browser_hover     move the real cursor and dwell
+browser_drag      press, interpolated moves, release
+browser_scroll    wheel or scrollIntoView
+browser_wait      selector, text, url, networkIdle, expression
+browser_screenshot  capture to an artifact path, optional ref marks
+browser_eval      page JS in main or isolated world (policy gated)
+browser_extract   schema-driven rows from a list page
+browser_network   request log, bodies, route/mock/block, HAR
+browser_cookies   get/set/clear cookies
+browser_set_viewport  device metrics override
+browser_fork_session  duplicate a logged-in tab into N isolated tabs
+browser_task      run a sub-task with the built-in loop
+browser_ask_human ask the operator and wait for an answer
+```

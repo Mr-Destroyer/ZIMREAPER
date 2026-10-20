@@ -99,8 +99,9 @@ function targetUrl(action: Action, ctx: PolicyContext): string | undefined {
 }
 
 /**
- * Exact host (with and without port) wins over a `*.example.com` wildcard; an
- * unknown origin is `read` in standard/strict and `interact` in permissive.
+ * Exact host (with and without port) wins over a `*.example.com` wildcard.
+ * Returns `undefined` when no configured rule matches; use `resolveOriginPolicy`
+ * for the mode-dependent default.
  */
 export function lookupOriginPolicy(
   url: string | undefined,
@@ -137,10 +138,25 @@ export function lookupOriginPolicy(
   return undefined;
 }
 
+/**
+ * Unknown origins are usable in standard mode (`interact`) so an agent can fill
+ * a form on a site the human just opened. Strict mode stays observe-only, and
+ * permissive mode also pre-authorizes eval and uploads.
+ */
+export function defaultOriginPolicy(config: PolicyConfig): OriginPolicy {
+  if (config.mode === "permissive") {
+    return { tier: "interact", allowEval: true, allowUploads: true };
+  }
+  if (config.mode === "strict") return { tier: "read" };
+  return { tier: "interact" };
+}
+
+export function resolveOriginPolicy(url: string | undefined, config: PolicyConfig, base?: string): OriginPolicy {
+  return lookupOriginPolicy(url, config, base) ?? defaultOriginPolicy(config);
+}
+
 export function resolveOriginTier(url: string | undefined, config: PolicyConfig, base?: string): Tier {
-  const policy = lookupOriginPolicy(url, config, base);
-  if (policy) return policy.tier;
-  return config.mode === "permissive" ? "interact" : "read";
+  return resolveOriginPolicy(url, config, base).tier;
 }
 
 function originLabel(url: string | undefined, base?: string): string {
@@ -186,11 +202,11 @@ function destructivePattern(action: Action, ctx: PolicyContext, config: PolicyCo
 
 function classifyAtTier(
   action: Action,
-  tier: Tier,
-  originPolicy: OriginPolicy | undefined,
+  originPolicy: OriginPolicy,
   url: string | undefined,
   base: string | undefined,
 ): PolicyDecision {
+  const tier = originPolicy.tier;
   const origin = originLabel(url, base);
 
   if (tier === "transact") return allow(`origin ${origin} is tier transact; all actions allowed`);
@@ -244,9 +260,9 @@ export function classify(
     }
   }
 
-  const tier = resolveOriginTier(rawTarget ?? ctx.url, config, ctx.url);
-  const originPolicy = lookupOriginPolicy(rawTarget ?? ctx.url, config, ctx.url);
-  let decision = classifyAtTier(action, tier, originPolicy, rawTarget ?? ctx.url, ctx.url);
+  const originPolicy = resolveOriginPolicy(rawTarget ?? ctx.url, config, ctx.url);
+  const tier = originPolicy.tier;
+  let decision = classifyAtTier(action, originPolicy, rawTarget ?? ctx.url, ctx.url);
 
   const pattern = destructivePattern(action, ctx, config);
   if (pattern && tier !== "transact" && decision.verdict !== "block") {

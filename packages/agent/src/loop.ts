@@ -169,6 +169,11 @@ export class AgentLoop {
         .join("\n");
 
       for (const call of response.toolCalls) {
+        if (opts.signal?.aborted) {
+          const err = new ZimReaperError("CANCELLED", "agent run aborted");
+          emit({ kind: "error", step: steps, detail: `${err.code}: ${err.message}` });
+          throw err;
+        }
         toolCallCount += 1;
         const tool = this.#tools.get(call.name);
         let result: ToolResult;

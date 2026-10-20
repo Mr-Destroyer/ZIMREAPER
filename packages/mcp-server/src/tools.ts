@@ -22,7 +22,7 @@ const TargetShape = z.object({
 const TargetInput = TargetShape.describe("A snapshot ref, CSS selector, or raw viewport point");
 
 type TargetInput = z.infer<typeof TargetShape>;
-type JsonRecord = Record<string, unknown>;
+export type JsonRecord = Record<string, unknown>;
 
 export interface BrowserToolOptions {
   /** Provider used by browser_task. Defaults to env-derived provider configuration. */
@@ -31,7 +31,7 @@ export interface BrowserToolOptions {
   taskMaxSteps?: number;
 }
 
-interface ToolOutput {
+export interface ToolOutput {
   text: string;
   structuredContent?: JsonRecord;
   tainted?: boolean;
@@ -143,10 +143,14 @@ function env(name: string): string | undefined {
 
 function providerFromEnv(): Provider {
   const kind = env("ZIMREAPER_PROVIDER") ?? "openai";
+  const explicitModel = env("ZIMREAPER_MODEL");
   const model =
-    env("ZIMREAPER_MODEL") ??
-    (kind === "anthropic" ? env("ANTHROPIC_MODEL") : env("OPENAI_MODEL")) ??
-    (kind === "anthropic" ? "claude-sonnet-4-20250514" : "gpt-4.1-mini");
+    explicitModel ??
+    (kind.startsWith("custom:")
+      ? ""
+      : kind === "anthropic"
+        ? (env("ANTHROPIC_MODEL") ?? "claude-sonnet-4-20250514")
+        : (env("OPENAI_MODEL") ?? "gpt-4.1-mini"));
   return createConfiguredProvider({ kind, model });
 }
 
@@ -162,8 +166,16 @@ function createConfiguredProvider(cfg: ProviderConfig): Provider {
   }
 }
 
-function query(client: ControlClient, q: Query, signal?: AbortSignal): Promise<unknown> {
-  return client.query(q, signal ? { signal } : undefined);
+function query(
+  client: ControlClient,
+  q: Query,
+  signal?: AbortSignal,
+  tabId?: unknown,
+): Promise<unknown> {
+  return client.query(q, {
+    ...(typeof tabId === "string" ? { tabId } : {}),
+    ...(signal ? { signal } : {}),
+  });
 }
 
 function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolDefinition[] {
@@ -177,7 +189,9 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
       );
     }
     const provider = opts.provider ?? (opts.providerConfig ? createConfiguredProvider(opts.providerConfig) : providerFromEnv());
-    const nested = browserTools(client, { ...opts, provider });
+    const nested = browserTools(client, { ...opts, provider }).filter(
+      (tool) => tool.spec.name !== "browser_task",
+    );
     const loop = new AgentLoop({
       provider,
       tools: nested,
@@ -255,6 +269,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
             cache: args.cache ?? true,
           }),
           signal,
+          args.tabId,
         );
         return {
           text: snapshotText(res),
@@ -282,6 +297,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
             maxChars: args.maxChars ?? 6_000,
           }),
           signal,
+          args.tabId,
         );
         return { text: protocolText(res), structuredContent: structured(res), tainted: true };
       },
@@ -333,10 +349,8 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
           ...(typeof args.tabId === "string" ? { tabId: args.tabId } : {}),
           ...(signal ? { signal } : {}),
         };
-        const target =
-          args.ref || args.selector || (typeof args.x === "number" && typeof args.y === "number")
-            ? toTarget(args as TargetInput)
-            : undefined;
+        const hasTargetFields = ["ref", "selector", "x", "y"].some((key) => args[key] !== undefined);
+        const target = hasTargetFields ? toTarget(args as TargetInput) : undefined;
         const res = await client.act(
           ActionSchema.parse({
             kind: "key.type",
@@ -569,7 +583,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
       },
       async run(args, signal) {
         if (args.op === "list") {
-          const res = await query(client, QuerySchema.parse({ kind: "tab.list" }), signal);
+          const res = await query(client, QuerySchema.parse({ kind: "tab.list" }), signal, args.tabId);
           return { text: tabTable(res), structuredContent: { tabs: Array.isArray(res) ? res : [] } };
         }
         if (args.op === "new") {
@@ -674,6 +688,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
             limit: args.limit ?? 100,
           }),
           signal,
+          args.tabId,
         );
         return { text: pretty(res), structuredContent: structured(res), tainted: true };
       },
@@ -730,6 +745,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
               ...(isRecord(args.filter) ? { filter: args.filter } : {}),
             }),
             signal,
+            args.tabId,
           );
           return { text: pretty(res), structuredContent: structured(res), tainted: true };
         }
@@ -746,6 +762,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
               maxBytes: args.maxBytes ?? 200_000,
             }),
             signal,
+            args.tabId,
           );
           return { text: pretty(res), structuredContent: structured(res), tainted: true };
         }
@@ -892,7 +909,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
     {
       name: "browser_ask_human",
       description: "Pause and ask the human operator to take over or approve something in the browser.",
-      mutates: true,
+      mutates: false,
       shape: {
         reason: z.string().min(1),
         detail: z.string().optional(),

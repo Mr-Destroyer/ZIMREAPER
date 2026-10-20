@@ -34,7 +34,15 @@ import type {
 
 export * from "./types.js";
 export { defaultPolicyConfig, loadPolicy, mergePolicyConfig, clonePolicyConfig } from "./config.js";
-export { classify, classifyQuery, resolveOriginTier, lookupOriginPolicy, isAlwaysAllowed } from "./classify.js";
+export {
+  classify,
+  classifyQuery,
+  resolveOriginTier,
+  resolveOriginPolicy,
+  defaultOriginPolicy,
+  lookupOriginPolicy,
+  isAlwaysAllowed,
+} from "./classify.js";
 export { AuditLog, auditDate, hashArgs } from "./audit.js";
 export { ApprovalBroker } from "./approvals.js";
 export { createFileVault } from "./vault.js";

@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import type {
   Action,
@@ -614,19 +614,65 @@ async function writeTokenFile(path: string, token: string): Promise<void> {
   }
 }
 
-export async function startControlServer(opts: ControlServerOptions): Promise<ControlServer> {
-  const host = opts.host ?? "127.0.0.1";
-  const wss = new WebSocketServer({ host, port: opts.port ?? 0 });
+/** Well-known control port. The server falls back to an ephemeral port if it is taken. */
+export const CONTROL_PORT = 7420;
+
+interface EndpointFile {
+  url: string;
+  port: number;
+  token: string;
+  sessionId: string;
+  pid: number;
+  startedAt: number;
+  appVersion?: string;
+}
+
+async function writeEndpointFile(server: ControlServer, appVersion?: string): Promise<string> {
+  const path = join(zimReaperHome(), "endpoint.json");
+  const body: EndpointFile = {
+    url: server.url,
+    port: server.port,
+    token: server.token,
+    sessionId: server.sessionId,
+    pid: process.pid,
+    startedAt: Date.now(),
+    ...(appVersion ? { appVersion } : {}),
+  };
+  try {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, `${JSON.stringify(body, null, 2)}\n`, { mode: 0o600 });
+  } catch (err) {
+    log.warn("cannot write endpoint file", { path, error: String(err) });
+  }
+  return path;
+}
+
+async function listenOn(wss: WebSocketServer): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     wss.once("listening", () => resolve());
     wss.once("error", (err: Error) =>
       reject(new ZimReaperError("INTERNAL", `control server failed to listen: ${err.message}`)),
     );
   });
+}
+
+export async function startControlServer(opts: ControlServerOptions): Promise<ControlServer> {
+  const host = opts.host ?? "127.0.0.1";
+  let wss = new WebSocketServer({ host, port: opts.port ?? CONTROL_PORT });
+  try {
+    await listenOn(wss);
+  } catch (err) {
+    // A second instance (or an unrelated listener) owns the well-known port: take an ephemeral one.
+    if (opts.port !== undefined) throw err;
+    log.warn("well-known control port busy, using an ephemeral port", { port: CONTROL_PORT });
+    wss = new WebSocketServer({ host, port: 0 });
+    await listenOn(wss);
+  }
   const address = wss.address();
   const port = typeof address === "object" && address ? address.port : 0;
   const server = new ControlServerImpl(opts, port, wss);
   await writeTokenFile(opts.tokenPath ?? controlTokenPath(), server.token);
+  await writeEndpointFile(server, opts.appVersion);
   log.info("control server listening", { port, sessionId: server.sessionId });
   return server;
 }

@@ -8,7 +8,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import type { Provider, ProviderConfig, Tool } from "@zimreaper/agent";
+import type { Provider, ProviderConfig } from "@zimreaper/agent";
 import type { ControlClient } from "@zimreaper/core";
 import { ZimReaperError } from "@zimreaper/protocol";
 import { browserToolDefinitions, browserTools, type BrowserToolOptions } from "./tools.js";
@@ -72,10 +72,6 @@ function successResult(value: unknown): CallToolResult {
   return { content: [{ type: "text", text: String(value) }] };
 }
 
-export function browserToolsForMcp(client: ControlClient, opts: BrowserToolOptions = {}): Tool[] {
-  return browserTools(client, opts);
-}
-
 function buildServer(opts: McpServerOptions): McpServer {
   const server = new McpServer({
     name: opts.name ?? "zimreaper",
@@ -95,11 +91,11 @@ function buildServer(opts: McpServerOptions): McpServer {
         inputSchema: def.shape,
         annotations: { readOnlyHint: !def.mutates },
       },
-      async (args: Record<string, unknown>): Promise<CallToolResult> => {
+      async (args: Record<string, unknown>, extra): Promise<CallToolResult> => {
         const started = Date.now();
         log(opts.debug, `${def.name} ${JSON.stringify(args)}`);
         try {
-          const result = await def.run(args);
+          const result = await def.run(args, extra.signal);
           log(opts.debug, `${def.name} ok ${Date.now() - started}ms`);
           return successResult(result);
         } catch (err) {
@@ -114,14 +110,21 @@ function buildServer(opts: McpServerOptions): McpServer {
 }
 
 export async function runStdio(opts: McpServerOptions): Promise<RunningMcpServer> {
-  const server = buildServer(opts);
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  return {
-    async close() {
-      await server.close();
-    },
-  };
+  try {
+    const server = buildServer(opts);
+    const transport = new StdioServerTransport();
+    transport.onerror = (err) => {
+      log(opts.debug, `stdio transport error: ${err.message}`);
+    };
+    await server.connect(transport);
+    return {
+      async close() {
+        await server.close().catch(() => undefined);
+      },
+    };
+  } catch (err) {
+    throw ZimReaperError.from(err, "BACKEND_ERROR");
+  }
 }
 
 function randomToken(): string {

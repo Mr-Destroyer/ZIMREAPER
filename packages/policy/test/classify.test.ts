@@ -129,9 +129,37 @@ const cases: Case[] = [
   { name: "transact tier allows destructive clicks", action: click("#delete-account"), context: site, config: transact, verdict: "allow" },
   { name: "transact tier allows network routes", action: netRoute(), context: site, config: transact, verdict: "allow" },
 
-  { name: "unknown origin defaults to read", action: click(), context: ctx("https://unknown.test/"), config: standard, verdict: "block" },
+  { name: "unknown origin defaults to interact in standard", action: click(), context: ctx("https://unknown.test/"), config: standard, verdict: "allow" },
   { name: "unknown origin is interact in permissive", action: click(), context: ctx("https://unknown.test/"), config: permissive, verdict: "allow" },
   { name: "unknown origin stays read in strict", action: click(), context: ctx("https://unknown.test/"), config: strict, verdict: "block" },
+  {
+    name: "standard unknown origin blocks eval without allowEval",
+    action: pageEval(),
+    context: ctx("https://unknown.test/"),
+    config: standard,
+    verdict: "block",
+  },
+  {
+    name: "standard unknown origin blocks uploads without allowUploads",
+    action: domSetFiles(),
+    context: ctx("https://unknown.test/"),
+    config: standard,
+    verdict: "block",
+  },
+  {
+    name: "permissive unknown origin allows eval",
+    action: pageEval(),
+    context: ctx("https://unknown.test/"),
+    config: permissive,
+    verdict: "allow",
+  },
+  {
+    name: "permissive unknown origin allows uploads",
+    action: domSetFiles(),
+    context: ctx("https://unknown.test/"),
+    config: permissive,
+    verdict: "allow",
+  },
 
   { name: "destructive click requires confirmation", action: click("#delete-account"), context: site, config: interact, verdict: "confirm" },
   { name: "camelCase destructive selectors require confirmation", action: click("#deleteAccount"), context: site, config: interact, verdict: "confirm" },
@@ -198,5 +226,17 @@ describe("classify", () => {
   it("allows audit and session queries", () => {
     expect(classifyQuery({ kind: "audit.tail", limit: 10 }, site, standard).verdict).toBe("allow");
     expect(classifyQuery({ kind: "session.info" }, site, standard).verdict).toBe("allow");
+  });
+
+  it("standard unknown origins allow clicks but keep destructive and strict gates", () => {
+    const unknown = ctx("https://brand-new.test/checkout");
+    const destructive = ctx("https://brand-new.test/checkout", { target: { name: "Pay now" } });
+
+    expect(classify(click("#save"), unknown, standard).verdict).toBe("allow");
+    expect(classify(click("#save"), destructive, standard).verdict).toBe("confirm");
+
+    const strictConfig = defaultPolicyConfig();
+    strictConfig.mode = "strict";
+    expect(classify(click("#save"), unknown, strictConfig).verdict).toBe("block");
   });
 });

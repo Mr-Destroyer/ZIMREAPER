@@ -896,7 +896,7 @@ exports[`browser tool surface > matches the golden name and schema list 1`] = `
       ],
       "type": "object",
     },
-    "mutates": true,
+    "mutates": false,
     "name": "browser_ask_human",
   },
 ]

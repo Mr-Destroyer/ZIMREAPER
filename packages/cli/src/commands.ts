@@ -2,6 +2,7 @@
  * Command implementations for the zimreaper operator CLI.
  */
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { AgentLoop, createProvider, type AgentEvent } from "@zimreaper/agent";
 import {
   ControlClient,
@@ -106,6 +107,38 @@ function connectUrl(flags: ParsedArgs["flags"]): string {
   return `ws://127.0.0.1:${port}`;
 }
 
+interface EndpointFile {
+  url?: string;
+  port?: number;
+  token?: string;
+  sessionId?: string;
+  pid?: number;
+}
+
+/** Read ~/.zimreaper/endpoint.json written by the app or `zimreaper attach`. */
+export async function readEndpoint(): Promise<EndpointFile | undefined> {
+  try {
+    const raw = await readFile(join(zimReaperHome(), "endpoint.json"), "utf8");
+    const parsed = JSON.parse(raw) as EndpointFile;
+    if (!parsed || typeof parsed.url !== "string" || typeof parsed.token !== "string") return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolveConnection(
+  flags: ParsedArgs["flags"],
+): Promise<{ url: string; token: string }> {
+  const explicitUrl = flagString(flags, "connect");
+  const explicitToken = flagString(flags, "token");
+  if (explicitUrl && explicitToken) return { url: explicitUrl, token: explicitToken };
+  const endpoint = await readEndpoint();
+  const url = explicitUrl ?? endpoint?.url ?? connectUrl(flags);
+  const token = explicitToken ?? endpoint?.token ?? (await readControlToken(flags));
+  return { url, token };
+}
+
 async function readControlToken(flags: ParsedArgs["flags"]): Promise<string> {
   const explicit = flagString(flags, "token");
   if (explicit) return explicit;
@@ -117,9 +150,13 @@ async function readControlToken(flags: ParsedArgs["flags"]): Promise<string> {
     const message = err instanceof Error ? err.message : String(err);
     throw new ZimReaperError(
       "UNAUTHORIZED",
-      `cannot read control token at ${controlTokenPath()} (${message}); pass --token or start the app`,
+      `cannot read control token at ${controlTokenPath()} (${message}); pass --token, start the app, or use --launch`,
     );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function env(name: string): string | undefined {
@@ -127,9 +164,13 @@ function env(name: string): string | undefined {
   return value !== undefined && value.length > 0 ? value : undefined;
 }
 
-function providerSpec(flags: ParsedArgs["flags"]): { kind: string; model: string } {
+export function providerSpec(flags: ParsedArgs["flags"]): { kind: string; model: string } {
   const kind = flagString(flags, "provider") ?? env("ZIMREAPER_PROVIDER") ?? "openai";
-  const defaultModel = kind === "anthropic" ? "claude-sonnet-4-20250514" : DEFAULT_MODEL;
+  const defaultModel = kind.startsWith("custom:")
+    ? ""
+    : kind === "anthropic"
+      ? "claude-sonnet-4-20250514"
+      : DEFAULT_MODEL;
   const model = flagString(flags, "model") ?? env("ZIMREAPER_MODEL") ?? defaultModel;
   return { kind, model };
 }
@@ -171,12 +212,12 @@ function printTabs(tabs: TabInfo[]): string {
 
 async function withLaunchedBackend<T>(
   fn: (backend: Backend, server: ControlServer) => Promise<T>,
-  opts: { url?: string } = {},
+  opts: { url?: string; port?: number } = {},
 ): Promise<T> {
   const backend = await launchCdpBackend({ headless: true });
   let server: ControlServer | undefined;
   try {
-    server = await startControlServer({ backend });
+    server = await startControlServer({ backend, ...(opts.port !== undefined ? { port: opts.port } : {}) });
     if (opts.url) {
       const client = await ControlClient.connect({
         url: server.url,
@@ -198,45 +239,57 @@ async function withLaunchedBackend<T>(
   }
 }
 
+function waitForShutdown(): Promise<void> {
+  if (process.stdin.isTTY) {
+    return new Promise<void>((resolve) => {
+      process.once("SIGINT", resolve);
+      process.once("SIGTERM", resolve);
+    });
+  }
+  if (process.stdin.readableEnded) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    process.stdin.once("end", resolve);
+    process.stdin.once("close", resolve);
+    process.once("SIGINT", resolve);
+    process.once("SIGTERM", resolve);
+  });
+}
+
 async function commandMcp(parsed: ParsedArgs): Promise<number> {
   const launch = parsed.flags.get("launch") === true;
   if (launch) {
-    return withLaunchedBackend(async (_backend, server) => {
-      const client = await ControlClient.connect({
-        url: server.url,
-        token: server.token,
-        client: "mcp",
-      });
-      const running = await runStdio({ client });
-      const shutdown = async (): Promise<void> => {
-        await running.close().catch(() => undefined);
-        client.close();
-      };
-      process.once("SIGINT", () => void shutdown().then(() => process.exit(0)));
-      process.once("SIGTERM", () => void shutdown().then(() => process.exit(0)));
-      await new Promise<void>(() => undefined);
-      return 0;
-    });
+    const port = flagNumber(parsed.flags, "port");
+    return withLaunchedBackend(
+      async (_backend, server) => {
+        const client = await ControlClient.connect({
+          url: server.url,
+          token: server.token,
+          client: "mcp",
+        });
+        try {
+          const running = await runStdio({ client });
+          try {
+            await waitForShutdown();
+          } finally {
+            await running.close().catch(() => undefined);
+          }
+          return 0;
+        } finally {
+          client.close();
+        }
+      },
+      port !== undefined ? { port } : {},
+    );
   }
-  const token = await readControlToken(parsed.flags);
+  const { url, token } = await resolveConnection(parsed.flags);
   const client = await ControlClient.connect({
-    url: connectUrl(parsed.flags),
+    url,
     token,
     client: "mcp",
   });
   try {
     await runStdio({ client });
-    await new Promise<void>((resolve) => {
-      if (process.stdin.isTTY) {
-        process.once("SIGINT", resolve);
-        process.once("SIGTERM", resolve);
-        return;
-      }
-      process.stdin.once("end", resolve);
-      process.stdin.once("close", resolve);
-      process.once("SIGINT", resolve);
-      process.once("SIGTERM", resolve);
-    });
+    await waitForShutdown();
     return 0;
   } finally {
     client.close();
@@ -304,15 +357,20 @@ async function commandAttach(parsed: ParsedArgs): Promise<number> {
 }
 
 async function commandInfo(parsed: ParsedArgs): Promise<number> {
-  const token = await readControlToken(parsed.flags);
+  const { url, token } = await resolveConnection(parsed.flags);
   const client = await ControlClient.connect({
-    url: connectUrl(parsed.flags),
+    url,
     token,
     client: "cli",
   });
   try {
     const info = await client.query<SessionInfo>({ kind: "session.info" });
-    const tabs = await client.query<TabInfo[]>({ kind: "tab.list" });
+    const rawTabs = await client.query<unknown>({ kind: "tab.list" });
+    const tabs: TabInfo[] = Array.isArray(rawTabs)
+      ? (rawTabs as TabInfo[])
+      : isRecord(rawTabs) && Array.isArray(rawTabs.tabs)
+        ? (rawTabs.tabs as TabInfo[])
+        : [];
     process.stdout.write(
       [
         `session  ${info.sessionId}`,
@@ -320,7 +378,7 @@ async function commandInfo(parsed: ParsedArgs): Promise<number> {
         `policy   ${info.policyMode}`,
         `version  ${info.appVersion} (protocol ${info.protocolVersion})`,
         "",
-        printTabs(Array.isArray(tabs) ? tabs : []),
+        printTabs(tabs),
         "",
       ].join("\n"),
     );
@@ -343,7 +401,7 @@ async function commandAudit(parsed: ParsedArgs): Promise<number> {
     return 0;
   }
   process.stderr.write(
-    `audit chain broken at entry ${result.brokenAt ?? "?"} (${result.entries} entries checked) in ${dir}\n`,
+    `INTERNAL: audit chain broken at entry ${result.brokenAt ?? "?"} (${result.entries} entries checked) in ${dir}\n`,
   );
   return 1;
 }

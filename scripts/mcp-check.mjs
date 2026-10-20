@@ -16,10 +16,15 @@ const fx = spawn(process.execPath, [path.join(ROOT, "fixtures/site/server.mjs")]
 });
 await new Promise((r) => setTimeout(r, 700));
 
+const attach = process.argv.includes("--attach");
 const transport = new StdioClientTransport({
   command: process.execPath,
-  args: [path.join(ROOT, "packages/cli/dist/bin.js"), "mcp", "--launch"],
-  env: { ...process.env, ZIMREAPER_HOME: "/tmp/zr-mcp-home", ZIMREAPER_LOG: "warn" },
+  args: [path.join(ROOT, "packages/cli/dist/bin.js"), "mcp", ...(attach ? [] : ["--launch"])],
+  env: {
+    ...process.env,
+    ZIMREAPER_HOME: attach ? "/tmp/zr-disc" : "/tmp/zr-mcp-home",
+    ZIMREAPER_LOG: "warn",
+  },
   stderr: "pipe",
 });
 const client = new Client({ name: "zimreaper-check", version: "0.0.1" });

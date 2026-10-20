@@ -71,7 +71,7 @@ describe("AgentLoop", () => {
     expect(calls).toEqual([{ maxChars: 4000 }]);
     expect(result.usage).toEqual({ inputTokens: 30, outputTokens: 12 });
     expect(provider.requests).toHaveLength(2);
-    expect(provider.requests[0]?.system).toContain("snapshot discipline".toUpperCase().slice(0, 1));
+    expect(provider.requests[0]?.system).toContain("Snapshot discipline");
     expect(provider.requests[1]?.messages.map((m: ChatMessage) => m.role)).toEqual([
       "user",
       "assistant",

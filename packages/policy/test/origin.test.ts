@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classify, lookupOriginPolicy, resolveOriginTier } from "../src/classify.js";
+import { classify, lookupOriginPolicy, resolveOriginPolicy, resolveOriginTier } from "../src/classify.js";
 import { defaultPolicyConfig } from "../src/config.js";
 import type { PolicyConfig } from "../src/types.js";
 import { click, ctx } from "./helpers.js";
@@ -41,12 +41,12 @@ describe("origin tier lookup", () => {
 
   it("does not let a wildcard match the apex domain", () => {
     const cfg = config({ "*.example.com": { tier: "transact" } });
-    expect(resolveOriginTier("https://example.com/", cfg)).toBe("read");
+    expect(resolveOriginTier("https://example.com/", cfg)).toBe("interact");
   });
 
   it("does not match unrelated suffixes", () => {
     const cfg = config({ "*.example.com": { tier: "transact" } });
-    expect(resolveOriginTier("https://notexample.com/", cfg)).toBe("read");
+    expect(resolveOriginTier("https://notexample.com/", cfg)).toBe("interact");
   });
 
   it("prefers an exact host over a wildcard", () => {
@@ -59,9 +59,19 @@ describe("origin tier lookup", () => {
   });
 
   it("defaults unknown origins by mode", () => {
-    expect(resolveOriginTier("https://unknown.test/", config({}, "standard"))).toBe("read");
+    expect(resolveOriginTier("https://unknown.test/", config({}, "standard"))).toBe("interact");
     expect(resolveOriginTier("https://unknown.test/", config({}, "strict"))).toBe("read");
     expect(resolveOriginTier("https://unknown.test/", config({}, "permissive"))).toBe("interact");
+  });
+
+  it("pre-authorizes eval and uploads for unknown origins in permissive mode", () => {
+    expect(resolveOriginPolicy("https://unknown.test/", config({}, "permissive"))).toEqual({
+      tier: "interact",
+      allowEval: true,
+      allowUploads: true,
+    });
+    expect(resolveOriginPolicy("https://unknown.test/", config({}, "standard"))).toEqual({ tier: "interact" });
+    expect(resolveOriginPolicy("https://unknown.test/", config({}, "strict"))).toEqual({ tier: "read" });
   });
 
   it("returns the full origin policy, including flags", () => {
@@ -78,13 +88,15 @@ describe("origin tier lookup", () => {
   });
 
   it("treats unparseable URLs as unknown", () => {
-    expect(resolveOriginTier("not a url", config({}, "standard"))).toBe("read");
+    expect(resolveOriginTier("not a url", config({}, "standard"))).toBe("interact");
     expect(resolveOriginTier("not a url", config({}, "permissive"))).toBe("interact");
+    expect(resolveOriginTier("not a url", config({}, "strict"))).toBe("read");
   });
 
   it("applies wildcard tiers during classification", () => {
-    const cfg = config({ "*.example.com": { tier: "transact" } });
-    expect(classify(click(), ctx("https://api.example.com/"), cfg).verdict).toBe("allow");
-    expect(classify(click(), ctx("https://example.com/"), cfg).verdict).toBe("block");
+    const cfg = config({ "*.example.com": { tier: "read" } });
+    expect(classify(click(), ctx("https://api.example.com/"), cfg).verdict).toBe("block");
+    // The apex is not matched by the wildcard, so standard mode uses interact.
+    expect(classify(click(), ctx("https://example.com/"), cfg).verdict).toBe("allow");
   });
 });

@@ -7,8 +7,9 @@
  *   zimreaper info                                                 session + tabs
  *   zimreaper audit verify                                         check audit hash chain
  */
+import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { ZimReaperError as ZimReaperErrorType } from "@zimreaper/protocol";
 
 export const HELP = `zimreaper — agentic browser control
@@ -50,6 +51,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   try {
     const { parseArgs, runCommand } = await import("./commands.js");
     const parsed = parseArgs(argv);
+    if (parsed.flags.get("help") === true) {
+      process.stdout.write(HELP);
+      return 0;
+    }
     return await runCommand(command, parsed);
   } catch (err) {
     const zim = await zimError(err);
@@ -62,7 +67,9 @@ function isEntrypoint(): boolean {
   const entry = process.argv[1];
   if (entry === undefined) return false;
   try {
-    return import.meta.url === pathToFileURL(resolve(entry)).href;
+    const current = realpathSync(fileURLToPath(import.meta.url));
+    const invoked = realpathSync(resolve(entry));
+    return pathToFileURL(invoked).href === pathToFileURL(current).href;
   } catch {
     return false;
   }

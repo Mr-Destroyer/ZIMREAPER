@@ -52,7 +52,10 @@ function customEnvPrefix(name: string): string {
 
 /** Redacts credentials from any message that might be echoed by a backend. */
 function safeMessage(value: string): string {
-  return value.replace(/(sk-[A-Za-z0-9_-]{6,})/g, "[redacted]").slice(0, 500);
+  return value
+    .replace(/(sk-[A-Za-z0-9_-]{6,})/g, "[redacted]")
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]+/gi, "$1[redacted]")
+    .slice(0, 500);
 }
 
 async function httpError(res: Response): Promise<ZimReaperError> {
@@ -379,7 +382,11 @@ function anthropicTools(tools: CompletionRequest["tools"]): JsonRecord[] {
 
 /** Parses a recorded/complete Anthropic Messages response (JSON or SSE). */
 export function parseAnthropicResponse(body: string, contentType = ""): CompletionResponse {
-  if (contentType.includes("text/event-stream") || body.trimStart().startsWith("data:")) {
+  if (
+    contentType.includes("text/event-stream") ||
+    body.trimStart().startsWith("data:") ||
+    body.trimStart().startsWith("event:")
+  ) {
     return parseAnthropicSse(body);
   }
   const root = parseJsonObject(body);
@@ -450,12 +457,15 @@ function parseAnthropicSse(body: string): CompletionResponse {
     } else if (type === "content_block_start") {
       const index = numberField(data.index) ?? 0;
       const block = isRecord(data.content_block) ? data.content_block : {};
+      const initialInput = isRecord(block.input) && Object.keys(block.input).length > 0
+        ? JSON.stringify(block.input)
+        : "";
       blocks.set(index, {
         type: stringField(block.type) ?? "text",
         text: stringField(block.text) ?? "",
         id: stringField(block.id) ?? "",
         name: stringField(block.name) ?? "",
-        json: "",
+        json: initialInput,
       });
     } else if (type === "content_block_delta") {
       const index = numberField(data.index) ?? 0;
@@ -493,7 +503,9 @@ function makeOpenAiProvider(cfg: ProviderConfig, name: string): Provider {
   const base = trimBase(cfg.baseUrl ?? env("OPENAI_BASE_URL") ?? DEFAULT_OPENAI_BASE);
   const apiKey = requireValue(
     cfg.apiKey ?? (name === "openai" ? env("OPENAI_API_KEY") : undefined) ?? env("ZIMREAPER_API_KEY"),
-    `${name} API key (set ${name.toUpperCase()}_API_KEY or ZIMREAPER_API_KEY)`,
+    name === "openai"
+      ? "OpenAI API key (set OPENAI_API_KEY or ZIMREAPER_API_KEY)"
+      : "provider API key (set the provider's _API_KEY or ZIMREAPER_API_KEY)",
   );
   const model = requireValue(cfg.model, `${name} model`);
   return {
