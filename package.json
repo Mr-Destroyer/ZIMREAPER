@@ -22,7 +22,13 @@
     "start:desktop": "npm run start -w @zimreaper/desktop",
     "e2e": "node tests/e2e/run.mjs",
     "fixture": "node fixtures/site/server.mjs",
-    "cli": "node packages/cli/dist/bin.js"
+    "cli": "node packages/cli/dist/bin.js",
+    "package:linux": "node scripts/package-linux.mjs",
+    "check:appimage": "node scripts/appimage-check.mjs",
+    "check:replay": "node scripts/replay-check.mjs",
+    "check:capabilities": "node scripts/capabilities-check.mjs",
+    "check:mcp": "node scripts/mcp-check.mjs",
+    "check:p0": "node scripts/p0-smoke.mjs"
   },
   "allowScripts": {
     "electron@33.4.11": true,

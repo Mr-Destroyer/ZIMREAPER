@@ -114,7 +114,9 @@ export class TabManager {
         sandbox: false,
         webSecurity: true,
         spellcheck: true,
-        backgroundThrottling: true,
+        // A background tab that is throttled cannot be driven: agents act on tabs the user is
+        // not looking at, and hidden windows (serve mode) must still render and dispatch input.
+        backgroundThrottling: false,
       },
     });
 

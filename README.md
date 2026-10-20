@@ -24,6 +24,7 @@ P0 is green end to end. Verified on this machine with real Chromium, real input 
 | HUD DOM (tabs, HUD, event stream) | `node scripts/shot.mjs` | 1 tab, 13 controls, live event feed |
 | Superhuman capabilities | `node scripts/capabilities-check.mjs` | 6/6 checks |
 | Record -> replay -> divergence | `node scripts/replay-check.mjs` | 4/4 checks |
+| Packaged AppImage (CLI + MCP + serve + attach) | `node scripts/appimage-check.mjs` | 4/4 checks |
 
 Superhuman capabilities, each verified against the fixture site:
 

@@ -54,6 +54,7 @@ export async function createShell(opts: ShellOptions): Promise<Shell> {
       sandbox: false,
       nodeIntegration: false,
       webSecurity: true,
+      backgroundThrottling: false,
     },
   });
 

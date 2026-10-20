@@ -18,11 +18,14 @@ await new Promise((r) => setTimeout(r, 700));
 
 const attach = process.argv.includes("--attach");
 const transport = new StdioClientTransport({
-  command: process.execPath,
-  args: [path.join(ROOT, "packages/cli/dist/bin.js"), "mcp", ...(attach ? [] : ["--launch"])],
+  // ZIMREAPER_CLI lets the same check run against the packaged AppImage, not just the source tree.
+  command: process.env.ZIMREAPER_CLI ?? process.execPath,
+  args: process.env.ZIMREAPER_CLI
+    ? ["mcp", ...(attach ? [] : ["--launch"])]
+    : [path.join(ROOT, "packages/cli/dist/bin.js"), "mcp", ...(attach ? [] : ["--launch"])],
   env: {
     ...process.env,
-    ZIMREAPER_HOME: attach ? "/tmp/zr-disc" : "/tmp/zr-mcp-home",
+    ZIMREAPER_HOME: process.env.ZIMREAPER_MCP_HOME ?? (attach ? "/tmp/zr-disc" : "/tmp/zr-mcp-home"),
     ZIMREAPER_LOG: "warn",
   },
   stderr: "pipe",
