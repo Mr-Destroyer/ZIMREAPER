@@ -21,7 +21,9 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
-const VERSION = JSON.parse(await readFile(path.join(ROOT, "package.json"), "utf8")).version ?? "0.1.0";
+const ROOT_MANIFEST = JSON.parse(await readFile(path.join(ROOT, "package.json"), "utf8"));
+const VERSION = ROOT_MANIFEST.version ?? "0.1.0";
+const AUTHOR = ROOT_MANIFEST.author ?? "Mr-Destroyer (zim)";
 const OUT = path.join(ROOT, "dist");
 const BUILD = path.join(ROOT, "build", "appimage");
 const APPDIR = path.join(BUILD, "ZimReaper.AppDir");
@@ -130,8 +132,8 @@ async function stageApp() {
         description: "Agentic browser: an AI agent drives a real Chromium with real input events",
         type: "module",
         main: "dist/main.js",
-        author: "ZimReaper",
-        license: "MIT",
+        author: AUTHOR,
+        license: ROOT_MANIFEST.license ?? "MIT",
       },
       null,
       2,
