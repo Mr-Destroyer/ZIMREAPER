@@ -97,7 +97,9 @@ export function createPerception(opts: PerceptionOptions): Perception {
         details: { known: [...state.history.keys()] },
       });
     }
-    const current = state.current ?? (await snapshot(tabId));
+    // Always capture a fresh view: "what changed since X" must mean "compare X to now", not
+    // "compare X to the last thing anyone happened to look at".
+    const current = await snapshot(tabId);
     return diffSnapshots(previous, current);
   };
 

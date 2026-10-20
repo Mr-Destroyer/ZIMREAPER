@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { AgentLoop, createProvider, type AgentEvent } from "@zimreaper/agent";
 import {
+  CONTROL_PORT,
   ControlClient,
   connectCdpBackend,
   controlTokenPath,
@@ -18,7 +19,6 @@ import { browserTools, runStdio } from "@zimreaper/mcp-server";
 import { AuditLog } from "@zimreaper/policy";
 import { ZimReaperError, type SessionInfo, type TabInfo } from "@zimreaper/protocol";
 
-const DEFAULT_CONTROL_PORT = 7420;
 const DEFAULT_MODEL = "gpt-4.1-mini";
 
 
@@ -103,7 +103,7 @@ function flagInt(flags: ParsedArgs["flags"], name: string): number | undefined {
 function connectUrl(flags: ParsedArgs["flags"]): string {
   const explicit = flagString(flags, "connect");
   if (explicit) return explicit;
-  const port = flagNumber(flags, "port") ?? DEFAULT_CONTROL_PORT;
+  const port = flagNumber(flags, "port") ?? CONTROL_PORT;
   return `ws://127.0.0.1:${port}`;
 }
 
@@ -239,19 +239,18 @@ async function withLaunchedBackend<T>(
   }
 }
 
-function waitForShutdown(): Promise<void> {
-  if (process.stdin.isTTY) {
-    return new Promise<void>((resolve) => {
-      process.once("SIGINT", resolve);
-      process.once("SIGTERM", resolve);
-    });
-  }
+function waitForSignals(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    process.once("SIGINT", resolve);
+    process.once("SIGTERM", resolve);
+  });
+}
+
+function waitForStdinClose(): Promise<void> {
   if (process.stdin.readableEnded) return Promise.resolve();
   return new Promise<void>((resolve) => {
     process.stdin.once("end", resolve);
     process.stdin.once("close", resolve);
-    process.once("SIGINT", resolve);
-    process.once("SIGTERM", resolve);
   });
 }
 
@@ -269,7 +268,7 @@ async function commandMcp(parsed: ParsedArgs): Promise<number> {
         try {
           const running = await runStdio({ client });
           try {
-            await waitForShutdown();
+            await waitForSignals();
           } finally {
             await running.close().catch(() => undefined);
           }
@@ -287,11 +286,13 @@ async function commandMcp(parsed: ParsedArgs): Promise<number> {
     token,
     client: "mcp",
   });
+  const running = await runStdio({ client });
   try {
-    await runStdio({ client });
-    await waitForShutdown();
+    if (process.stdin.isTTY) await waitForSignals();
+    else await Promise.race([waitForStdinClose(), waitForSignals()]);
     return 0;
   } finally {
+    await running.close().catch(() => undefined);
     client.close();
   }
 }
@@ -317,7 +318,7 @@ async function commandRun(parsed: ParsedArgs): Promise<number> {
       try {
         const loop = new AgentLoop({
           provider,
-          tools: browserTools(client),
+          tools: browserTools(client, { provider }),
           maxSteps,
           onEvent(event) {
             const line = eventLine(event);

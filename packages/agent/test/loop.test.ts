@@ -206,3 +206,37 @@ describe("AgentLoop", () => {
     expect(provider.requests).toHaveLength(0);
   });
 });
+
+describe("AgentLoop abort semantics", () => {
+  it("stops before executing another tool after the signal aborts", async () => {
+    const controller = new AbortController();
+    const provider = new FakeProvider([
+      {
+        text: "",
+        toolCalls: [
+          toolCall("call_1", "snapshot", {}),
+          toolCall("call_2", "snapshot", {}),
+        ],
+        stopReason: "tool_use",
+      },
+    ]);
+    let runs = 0;
+    const loop = new AgentLoop({
+      provider,
+      tools: [
+        {
+          spec: { name: "snapshot", description: "read", inputSchema: { type: "object" } },
+          async run() {
+            runs += 1;
+            controller.abort();
+            return "first";
+          },
+        },
+      ],
+    });
+    await expect(loop.run("x", { signal: controller.signal })).rejects.toMatchObject({
+      code: "CANCELLED",
+    });
+    expect(runs).toBe(1);
+  });
+});

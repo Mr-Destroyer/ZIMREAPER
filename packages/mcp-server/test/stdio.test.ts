@@ -1,38 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { ControlClient } from "@zimreaper/core";
-import { browserToolDefinitions } from "../src/index.js";
+import { createMcpServer } from "../src/index.js";
 import { asClient, FakeControlClient } from "./fake-client.js";
-
-function buildTestServer(client: ControlClient): McpServer {
-  const server = new McpServer({ name: "zimreaper-test", version: "0.1.0" });
-  for (const def of browserToolDefinitions(client)) {
-    server.registerTool(
-      def.name,
-      { description: def.description, inputSchema: def.shape },
-      async (args: Record<string, unknown>) => {
-        try {
-          const result = await def.run(args);
-          return {
-            content: [{ type: "text" as const, text: result.text }],
-            ...(result.structuredContent ? { structuredContent: result.structuredContent } : {}),
-          };
-        } catch (err) {
-          const { ZimReaperError } = await import("@zimreaper/protocol");
-          const zim = ZimReaperError.from(err);
-          return {
-            content: [{ type: "text" as const, text: `${zim.code}: ${zim.message}` }],
-            structuredContent: { error: { code: zim.code, message: zim.message } },
-            isError: true,
-          };
-        }
-      },
-    );
-  }
-  return server;
-}
 
 describe("MCP stdio protocol round trip", () => {
   it("lists the browser tools and calls one through the SDK", async () => {
@@ -52,7 +22,7 @@ describe("MCP stdio protocol round trip", () => {
         },
       ],
     });
-    const server = buildTestServer(asClient(fake));
+    const server = createMcpServer({ client: asClient(fake) });
     const client = new Client({ name: "test-client", version: "0.0.0" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);

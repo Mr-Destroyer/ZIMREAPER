@@ -11,8 +11,9 @@
  * Usage: node scripts/p0-smoke.mjs [--headed] [--keep]
  */
 import { spawn } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { existsSync, readdirSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 
@@ -21,6 +22,26 @@ const HEADED = args.has("--headed");
 const KEEP = args.has("--keep");
 const FIXTURE_PORT = 4310;
 const ROOT = path.resolve(import.meta.dirname, "..");
+
+function chromiumPath() {
+  if (process.env.ZIMREAPER_CHROMIUM) return process.env.ZIMREAPER_CHROMIUM;
+  const candidates = ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"];
+  for (const candidate of candidates) {
+    try {
+      if (existsSync(candidate)) return candidate;
+    } catch {
+      /* keep looking */
+    }
+  }
+  const cache = join(homedir(), ".cache", "ms-playwright");
+  if (existsSync(cache)) {
+    for (const dir of readdirSync(cache)) {
+      const candidate = join(cache, dir, "chrome-linux", "chrome");
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  throw new Error("no chromium found: set ZIMREAPER_CHROMIUM");
+}
 
 const results = [];
 let crashed = null;
@@ -60,8 +81,10 @@ let fixture;
 let backend;
 let serverA;
 let serverB;
+let serverC;
 let clientA;
 let clientB;
+let clientC;
 
 try {
   const core = await import(path.join(ROOT, "packages/core/dist/index.js"));
@@ -151,7 +174,34 @@ try {
     blocked = true;
     code = err?.code ?? "unknown";
   }
-  check("unknown origin click is refused", blocked && code === "BLOCKED_BY_POLICY", code);
+  check("standard policy allows a click on an unknown origin", !blocked, code);
+  // ---- Phase C: strict policy refuses the same click on the same unknown origin
+  serverC = await core.startControlServer({
+    backend,
+    artifactsDir: path.join(home, "artifacts"),
+    policyDir: path.join(home, "strict"),
+    policy: { mode: "strict" },
+  });
+  clientC = await core.ControlClient.connect({ url: serverC.url, token: serverC.token, client: "smoke-c" });
+  await clientC.act(
+    { kind: "nav.goto", url: `http://127.0.0.1:${FIXTURE_PORT}/table`, waitUntil: "load", timeoutMs: 20_000 },
+    { timeoutMs: 25_000 },
+  );
+  const snapC = await clientC.query({ kind: "page.snapshot" });
+  const strictLink = snapC.refs.find((r) => r.role === "link") ?? snapC.refs[0];
+  let strictBlocked = false;
+  let strictCode = "";
+  try {
+    await clientC.act({ kind: "mouse.click", target: { ref: strictLink.ref } });
+  } catch (err) {
+    strictBlocked = true;
+    strictCode = err?.code ?? "unknown";
+  }
+  check(
+    "strict policy refuses the same click",
+    strictBlocked && strictCode === "BLOCKED_BY_POLICY",
+    strictCode,
+  );
 
   // ---- screenshot round-trip
   const shot = await clientB.act({ kind: "page.screenshot", fullPage: false, annotate: true });
@@ -166,8 +216,10 @@ try {
   try {
     clientA?.close?.();
     clientB?.close?.();
+    clientC?.close?.();
     await serverA?.close?.();
     await serverB?.close?.();
+    await serverC?.close?.();
     await backend?.close?.();
   } catch (err) {
     process.stderr.write(`cleanup: ${err}\n`);

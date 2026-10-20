@@ -22,6 +22,18 @@ P0 is green end to end. Verified on this machine with real Chromium, real input 
 | MCP surface, attached to running app | `node scripts/mcp-check.mjs --attach` | PASS |
 | Electron shell boot | `ZIMREAPER_HEADLESS_SMOKE=1 npm start -w @zimreaper/desktop` | `desktop-ready 7420` |
 | HUD DOM (tabs, HUD, event stream) | `node scripts/shot.mjs` | 1 tab, 13 controls, live event feed |
+| Superhuman capabilities | `node scripts/capabilities-check.mjs` | 6/6 checks |
+
+Superhuman capabilities, each verified against the fixture site:
+
+| Capability | What the check proves |
+|---|---|
+| `page.extract` | 25 table rows x 3 fields returned as structured JSON, no CSS knowledge from the caller |
+| `page.diff` | after an async load, only the 5 new items are reported — the agent never re-reads the page |
+| `net.log` | the full 3-hop fetch chain the page performs internally is visible to the agent |
+| `storage.cookies` | cookie jar written and read back outside the page |
+| `session.fork` | one live tab cloned into 2 more isolated tabs (1 -> 3) |
+| `page.eval` | policy-gated JS evaluation in the page |
 
 What the smoke actually proves: Chromium is driven over CDP, the agent gets a 640-char
 token-budgeted snapshot with 13 stable refs, a click resolves a ref to a box-model centre and

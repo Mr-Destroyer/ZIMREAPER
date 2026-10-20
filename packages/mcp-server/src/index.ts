@@ -72,7 +72,7 @@ function successResult(value: unknown): CallToolResult {
   return { content: [{ type: "text", text: String(value) }] };
 }
 
-function buildServer(opts: McpServerOptions): McpServer {
+export function createMcpServer(opts: McpServerOptions): McpServer {
   const server = new McpServer({
     name: opts.name ?? "zimreaper",
     version: opts.version ?? "0.1.0",
@@ -111,7 +111,7 @@ function buildServer(opts: McpServerOptions): McpServer {
 
 export async function runStdio(opts: McpServerOptions): Promise<RunningMcpServer> {
   try {
-    const server = buildServer(opts);
+    const server = createMcpServer(opts);
     const transport = new StdioServerTransport();
     transport.onerror = (err) => {
       log(opts.debug, `stdio transport error: ${err.message}`);
@@ -163,7 +163,7 @@ export async function runHttp(
   const port = opts.port ?? 7421;
   const pathToken = randomToken();
   const mcpPath = `/mcp/${pathToken}`;
-  const server = buildServer(opts);
+  const server = createMcpServer(opts);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
   await server.connect(transport);
 
