@@ -1,10 +1,22 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const appRoot = resolve(here, "..");
+
+/**
+ * These assertions are about build output, so they only mean something if the build ran. On a
+ * clean checkout (CI, fresh clone) `dist/` does not exist — it is gitignored — and asserting on
+ * missing files tests the filesystem, not the build. Build once here instead of making the whole
+ * suite depend on someone having run `npm run build` first.
+ */
+beforeAll(() => {
+  if (existsSync(resolve(appRoot, "dist/preload.cjs"))) return;
+  execFileSync("npm", ["run", "build"], { cwd: appRoot, stdio: "ignore" });
+}, 180_000);
 
 describe("desktop artifacts and config", () => {
   it("declares an ESM Electron entry and build scripts", () => {
