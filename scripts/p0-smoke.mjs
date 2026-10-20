@@ -102,26 +102,28 @@ try {
   check("snapshot has refs", Array.isArray(snap?.refs) && snap.refs.length > 0, `${snap?.refs?.length ?? 0} refs`);
   check("snapshot text is compact", typeof snap?.text === "string" && snap.text.length < 20_000, `${snap?.text?.length ?? 0} chars`);
 
-  const byName = (re) => snap.refs.find((r) => re.test(r.name) || re.test(r.selector ?? ""));
-  const email = byName(/e-?mail/i);
-  const password = byName(/pass(word)?/i);
-  const submit = byName(/sign in|log ?in|submit/i);
+  const pick = (role, re) => snap.refs.find((r) => r.role === role && re.test(r.name));
+  const email = pick("textbox", /e-?mail/i);
+  const password = pick("textbox", /pass(word)?/i);
+  const submit = pick("button", /sign in|log ?in|submit/i);
   check("found email/password/submit refs", Boolean(email && password && submit), [email?.ref, password?.ref, submit?.ref].join(","));
   if (!email || !password || !submit) throw new Error("cannot continue without refs");
 
   await clientA.act({ kind: "mouse.click", target: { ref: email.ref } });
   await clientA.act({ kind: "key.type", text: "agent@zimreaper.dev" });
   await clientA.act({ kind: "mouse.click", target: { ref: password.ref } });
-  await clientA.act({ kind: "key.type", text: "hunter2-but-real" });
+  await clientA.act({ kind: "key.type", text: "zimreaper" }); // fixture password
   await clientA.act({ kind: "mouse.click", target: { ref: submit.ref } });
   check("clicked and typed with real input events", true);
 
   await clientA.act({ kind: "page.wait", for: { text: "Welcome," }, timeoutMs: 15_000 });
-  const text = await clientA.query({ kind: "page.text", maxChars: 4000 });
-  check("login succeeded", /Welcome, agent@zimreaper\.dev/.test(text), text.slice(0, 120).replace(/\s+/g, " "));
+  const textResult = await clientA.query({ kind: "page.text", maxChars: 4000 });
+  const pageText = typeof textResult === "string" ? textResult : textResult?.text ?? "";
+  check("login succeeded", /Welcome, agent@zimreaper\.dev/.test(pageText), pageText.slice(0, 120).replace(/\s+/g, " "));
 
-  const tail = await clientA.query({ kind: "audit.tail", limit: 200 });
-  check("audit entries written", Array.isArray(tail) && tail.length >= 6, `${tail?.length ?? 0} entries`);
+  const tailResult = await clientA.query({ kind: "audit.tail", limit: 200 });
+  const tail = Array.isArray(tailResult) ? tailResult : tailResult?.entries ?? [];
+  check("audit entries written", tail.length >= 6, `${tail.length} entries`);
 
   const verifier = await policyPkg.createPolicy({ dir: home, sessionId: serverA.sessionId });
   const chain = verifier.verifyChain();
@@ -152,8 +154,10 @@ try {
   check("unknown origin click is refused", blocked && code === "BLOCKED_BY_POLICY", code);
 
   // ---- screenshot round-trip
-  const shot = await clientB.act({ kind: "page.screenshot", fullPage: false });
-  check("screenshot produced", Boolean(shot?.path || shot?.image), String(shot?.path ?? `${shot?.image?.length ?? 0} b64`));
+  const shot = await clientB.act({ kind: "page.screenshot", fullPage: false, annotate: true });
+  const shotPath = shot?.result?.path;
+  const marks = shot?.result?.marks?.length ?? 0;
+  check("screenshot produced", Boolean(shotPath), `${shotPath} (${marks} marks)`);
 
   process.stdout.write(`\nartifacts: ${path.join(home, "artifacts")}\n`);
 } catch (err) {

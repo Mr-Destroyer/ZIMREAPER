@@ -16,7 +16,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:exec": "vitest run test/help.test.ts"
   },
   "dependencies": {
     "@zimreaper/protocol": "*",

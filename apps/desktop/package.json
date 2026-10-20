@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -b && node scripts/build-preload.mjs && vite build",
     "dev": "node scripts/dev.mjs",
-    "start": "electron .",
+    "start": "node scripts/start.mjs",
     "test": "vitest run"
   },
   "dependencies": {

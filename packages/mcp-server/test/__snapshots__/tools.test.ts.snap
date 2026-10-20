@@ -1,0 +1,903 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`browser tool surface > matches the golden name and schema list 1`] = `
+[
+  {
+    "description": "Navigate the active tab to a URL and wait for the requested lifecycle event. Snapshot after navigation.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "tabId": {
+          "type": "string",
+        },
+        "timeoutMs": {
+          "type": "number",
+        },
+        "url": {
+          "description": "Absolute URL to open",
+          "type": "string",
+        },
+        "waitUntil": {
+          "enum": [
+            "load",
+            "domcontentloaded",
+            "networkidle",
+            "commit",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "url",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_navigate",
+  },
+  {
+    "description": "Read the page as compact ref-tagged text. Refs are valid only for this snapshot generation; re-snapshot after changes.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "cache": {
+          "type": "boolean",
+        },
+        "includeFrames": {
+          "type": "boolean",
+        },
+        "interactiveOnly": {
+          "type": "boolean",
+        },
+        "maxChars": {
+          "type": "number",
+        },
+        "mode": {
+          "enum": [
+            "ax",
+            "dom",
+            "both",
+          ],
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": false,
+    "name": "browser_snapshot",
+  },
+  {
+    "description": "Show only refs and text that changed since a previous snapshot id.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "maxChars": {
+          "type": "number",
+        },
+        "since": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "since",
+      ],
+      "type": "object",
+    },
+    "mutates": false,
+    "name": "browser_diff",
+  },
+  {
+    "description": "Click an element using a snapshot ref, CSS selector, or viewport point with a real mouse event.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "button": {
+          "enum": [
+            "left",
+            "right",
+            "middle",
+            "back",
+            "forward",
+          ],
+          "type": "string",
+        },
+        "clickCount": {
+          "type": "number",
+        },
+        "delayMs": {
+          "type": "number",
+        },
+        "modifiers": {
+          "items": {
+            "enum": [
+              "Alt",
+              "Control",
+              "Meta",
+              "Shift",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "offsetX": {
+          "type": "number",
+        },
+        "offsetY": {
+          "type": "number",
+        },
+        "ref": {
+          "type": "string",
+        },
+        "selector": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "x": {
+          "type": "number",
+        },
+        "y": {
+          "type": "number",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_click",
+  },
+  {
+    "description": "Type text into the focused element or a target, optionally clearing it first and submitting with Enter.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "clearFirst": {
+          "type": "boolean",
+        },
+        "delayMs": {
+          "type": "number",
+        },
+        "offsetX": {
+          "type": "number",
+        },
+        "offsetY": {
+          "type": "number",
+        },
+        "ref": {
+          "type": "string",
+        },
+        "selector": {
+          "type": "string",
+        },
+        "submit": {
+          "type": "boolean",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "text": {
+          "type": "string",
+        },
+        "x": {
+          "type": "number",
+        },
+        "y": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "text",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_type",
+  },
+  {
+    "description": "Press a key or chord (for example Enter, Tab, or Control+Shift+T) on the active tab.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "chord": {
+          "type": "string",
+        },
+        "count": {
+          "type": "number",
+        },
+        "key": {
+          "type": "string",
+        },
+        "modifiers": {
+          "items": {
+            "enum": [
+              "Alt",
+              "Control",
+              "Meta",
+              "Shift",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_press",
+  },
+  {
+    "description": "Move the real cursor over an element and hover for a short duration.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "durationMs": {
+          "type": "number",
+        },
+        "offsetX": {
+          "type": "number",
+        },
+        "offsetY": {
+          "type": "number",
+        },
+        "ref": {
+          "type": "string",
+        },
+        "selector": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "x": {
+          "type": "number",
+        },
+        "y": {
+          "type": "number",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_hover",
+  },
+  {
+    "description": "Drag from one target to another with real mouse movement.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "button": {
+          "enum": [
+            "left",
+            "right",
+            "middle",
+          ],
+          "type": "string",
+        },
+        "durationMs": {
+          "type": "number",
+        },
+        "from": {
+          "additionalProperties": false,
+          "properties": {
+            "offsetX": {
+              "type": "number",
+            },
+            "offsetY": {
+              "type": "number",
+            },
+            "ref": {
+              "type": "string",
+            },
+            "selector": {
+              "type": "string",
+            },
+            "x": {
+              "type": "number",
+            },
+            "y": {
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+        "steps": {
+          "type": "number",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "to": {
+          "additionalProperties": false,
+          "properties": {
+            "offsetX": {
+              "type": "number",
+            },
+            "offsetY": {
+              "type": "number",
+            },
+            "ref": {
+              "type": "string",
+            },
+            "selector": {
+              "type": "string",
+            },
+            "x": {
+              "type": "number",
+            },
+            "y": {
+              "type": "number",
+            },
+          },
+          "type": "object",
+        },
+      },
+      "required": [
+        "from",
+        "to",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_drag",
+  },
+  {
+    "description": "Scroll the page or a target with a real wheel event.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deltaX": {
+          "type": "number",
+        },
+        "deltaY": {
+          "type": "number",
+        },
+        "offsetX": {
+          "type": "number",
+        },
+        "offsetY": {
+          "type": "number",
+        },
+        "ref": {
+          "type": "string",
+        },
+        "selector": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "toBottom": {
+          "type": "boolean",
+        },
+        "toTop": {
+          "type": "boolean",
+        },
+        "x": {
+          "type": "number",
+        },
+        "y": {
+          "type": "number",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_scroll",
+  },
+  {
+    "description": "Capture the page or a clip as an image. Annotated screenshots include numbered interactive marks.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "annotate": {
+          "type": "boolean",
+        },
+        "clip": {
+          "additionalProperties": false,
+          "properties": {
+            "height": {
+              "type": "number",
+            },
+            "width": {
+              "type": "number",
+            },
+            "x": {
+              "type": "number",
+            },
+            "y": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height",
+          ],
+          "type": "object",
+        },
+        "format": {
+          "enum": [
+            "png",
+            "jpeg",
+            "webp",
+          ],
+          "type": "string",
+        },
+        "fullPage": {
+          "type": "boolean",
+        },
+        "path": {
+          "type": "string",
+        },
+        "quality": {
+          "type": "number",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": false,
+    "name": "browser_screenshot",
+  },
+  {
+    "description": "Wait for a selector, text, URL fragment, network idle, expression, or a ref to disappear.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "expression": {
+          "type": "string",
+        },
+        "networkIdle": {
+          "type": "boolean",
+        },
+        "pollMs": {
+          "type": "number",
+        },
+        "refGone": {
+          "type": "string",
+        },
+        "selector": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "text": {
+          "type": "string",
+        },
+        "timeoutMs": {
+          "type": "number",
+        },
+        "urlContains": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": false,
+    "name": "browser_wait",
+  },
+  {
+    "description": "List, create, close, or activate tabs. op=list/new/close/activate.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "active": {
+          "type": "boolean",
+        },
+        "forkFrom": {
+          "type": "string",
+        },
+        "op": {
+          "enum": [
+            "list",
+            "new",
+            "close",
+            "activate",
+          ],
+          "type": "string",
+        },
+        "partition": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "url": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "op",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_tabs",
+  },
+  {
+    "description": "Navigate history or reload: op=back/forward/reload.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "ignoreCache": {
+          "type": "boolean",
+        },
+        "op": {
+          "enum": [
+            "back",
+            "forward",
+            "reload",
+          ],
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "op",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_nav",
+  },
+  {
+    "description": "Evaluate a JavaScript expression in the page and return its value.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "awaitPromise": {
+          "type": "boolean",
+        },
+        "expression": {
+          "type": "string",
+        },
+        "isolated": {
+          "type": "boolean",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "expression",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_eval",
+  },
+  {
+    "description": "Extract structured rows from repeating page elements using a row selector and field selectors.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "attr": {
+                "type": "string",
+              },
+              "selector": {
+                "type": "string",
+              },
+              "self": {
+                "type": "boolean",
+              },
+            },
+            "type": "object",
+          },
+          "type": "object",
+        },
+        "limit": {
+          "type": "number",
+        },
+        "rowSelector": {
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "rowSelector",
+        "fields",
+      ],
+      "type": "object",
+    },
+    "mutates": false,
+    "name": "browser_extract",
+  },
+  {
+    "description": "Inspect or modify network traffic: op=log/body/route/replay. route and replay are mutating.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "string",
+        },
+        "filter": {
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "type": "string",
+            },
+            "resourceType": {
+              "type": "string",
+            },
+            "status": {
+              "type": "number",
+            },
+            "urlContains": {
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string",
+          },
+          "type": "object",
+        },
+        "limit": {
+          "type": "number",
+        },
+        "maxBytes": {
+          "type": "number",
+        },
+        "method": {
+          "type": "string",
+        },
+        "mode": {
+          "enum": [
+            "block",
+            "mock",
+            "pass",
+          ],
+          "type": "string",
+        },
+        "op": {
+          "enum": [
+            "log",
+            "body",
+            "route",
+            "replay",
+          ],
+          "type": "string",
+        },
+        "overrides": {
+          "additionalProperties": false,
+          "properties": {
+            "body": {
+              "type": "string",
+            },
+            "headers": {
+              "additionalProperties": {
+                "type": "string",
+              },
+              "type": "object",
+            },
+            "method": {
+              "type": "string",
+            },
+            "url": {
+              "type": "string",
+            },
+          },
+          "type": "object",
+        },
+        "part": {
+          "enum": [
+            "request",
+            "response",
+          ],
+          "type": "string",
+        },
+        "pattern": {
+          "type": "string",
+        },
+        "requestId": {
+          "type": "string",
+        },
+        "sinceSeq": {
+          "type": "number",
+        },
+        "status": {
+          "type": "number",
+        },
+        "tabId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "op",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_network",
+  },
+  {
+    "description": "Read, set, or clear cookies for the current tab or a URL.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "cookies": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "domain": {
+                "type": "string",
+              },
+              "expires": {
+                "type": "number",
+              },
+              "httpOnly": {
+                "type": "boolean",
+              },
+              "name": {
+                "type": "string",
+              },
+              "path": {
+                "type": "string",
+              },
+              "sameSite": {
+                "enum": [
+                  "Strict",
+                  "Lax",
+                  "None",
+                ],
+                "type": "string",
+              },
+              "secure": {
+                "type": "boolean",
+              },
+              "value": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "name",
+              "value",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "op": {
+          "enum": [
+            "get",
+            "set",
+            "clear",
+          ],
+          "type": "string",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "url": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "op",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_cookies",
+  },
+  {
+    "description": "Resize the viewport and optionally emulate a mobile device scale.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "deviceScaleFactor": {
+          "type": "number",
+        },
+        "height": {
+          "type": "number",
+        },
+        "mobile": {
+          "type": "boolean",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "width": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "width",
+        "height",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_set_viewport",
+  },
+  {
+    "description": "Fork the current session into independent tabs sharing the current login state.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "number",
+        },
+        "tabId": {
+          "type": "string",
+        },
+        "url": {
+          "type": "string",
+        },
+      },
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_fork_session",
+  },
+  {
+    "description": "Run a full autonomous browser task with the native agent loop. Requires a configured model provider.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "maxSteps": {
+          "type": "number",
+        },
+        "task": {
+          "type": "string",
+        },
+        "url": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "task",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_task",
+  },
+  {
+    "description": "Pause and ask the human operator to take over or approve something in the browser.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "detail": {
+          "type": "string",
+        },
+        "reason": {
+          "type": "string",
+        },
+        "timeoutMs": {
+          "type": "number",
+        },
+      },
+      "required": [
+        "reason",
+      ],
+      "type": "object",
+    },
+    "mutates": true,
+    "name": "browser_ask_human",
+  },
+]
+`;

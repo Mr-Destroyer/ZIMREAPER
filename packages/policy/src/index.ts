@@ -1,87 +1,91 @@
 /**
  * Policy: origin trust tiers, action classification, human approval, hash-chained audit.
  * Deterministic and side-effect free except for the append-only audit log.
+ *
+ * Control-server integration:
+ *
+ *   const policy = await createPolicy({ dir: zimReaperHome(), sessionId });
+ *   policy.onApprovalRequest((request) => hud.emit("approval.requested", request));
+ *   const decision = policy.preflight(action, { url, actor, tainted });
+ *   if (decision.verdict === "confirm") {
+ *     const approved = await policy.requestApproval(decision, { actionKind: action.kind, argsHash });
+ *     if (!approved) throw new ZimReaperError("NEEDS_HUMAN", "approval denied or timed out");
+ *   }
+ *   policy.record({ ts, actor, sessionId, kind: action.kind, argsHash, outcome: "ok" });
+ *
+ * `record` accepts only `argsHash`; callers must hash args with `hashArgs` and must
+ * never pass raw action arguments. `verifyChain()` re-reads every daily file.
  */
-import type { Action, AuditEntry } from "@zimreaper/protocol";
 import { ZimReaperError } from "@zimreaper/protocol";
+import type { Action, AuditEntry } from "@zimreaper/protocol";
+import { ApprovalBroker } from "./approvals.js";
+import { AuditLog } from "./audit.js";
+import { classify, isAlwaysAllowed } from "./classify.js";
+import { clonePolicyConfig, loadPolicy, mergePolicyConfig } from "./config.js";
+import type {
+  ApprovalRequest,
+  AuditRecordInput,
+  PolicyConfig,
+  PolicyContext,
+  PolicyDecision,
+  PolicyEngine,
+  PolicyOptions,
+} from "./types.js";
 
-export type Verdict = "allow" | "confirm" | "block";
-export type PolicyMode = "permissive" | "standard" | "strict";
+export * from "./types.js";
+export { defaultPolicyConfig, loadPolicy, mergePolicyConfig, clonePolicyConfig } from "./config.js";
+export { classify, classifyQuery, resolveOriginTier, lookupOriginPolicy, isAlwaysAllowed } from "./classify.js";
+export { AuditLog, auditDate, hashArgs } from "./audit.js";
+export { ApprovalBroker } from "./approvals.js";
+export { createFileVault } from "./vault.js";
+export type { FileVaultOptions } from "./vault.js";
 
-export interface OriginPolicy {
-  /** read = observe only; interact = forms/nav; transact = pay/send/delete/publish. */
-  tier: "read" | "interact" | "transact";
-  allowEval?: boolean;
-  allowUploads?: boolean;
-  allowDownloads?: boolean;
-}
+export async function createPolicy(opts: PolicyOptions): Promise<PolicyEngine> {
+  if (!opts.dir) throw new ZimReaperError("BAD_REQUEST", "policy dir is required");
+  if (!opts.sessionId) throw new ZimReaperError("BAD_REQUEST", "sessionId is required");
 
-export interface PolicyConfig {
-  mode: PolicyMode;
-  origins: Record<string, OriginPolicy>;
-  /** Extra CSS-selector/name heuristics that mark an element destructive. */
-  destructivePatterns: string[];
-  approvalTimeoutMs: number;
-  maxActionsPerMinute: number;
-}
+  const loaded = loadPolicy(opts.dir);
+  const config: PolicyConfig = mergePolicyConfig(loaded, opts.config);
+  const now = opts.now ?? Date.now;
+  const audit = new AuditLog(opts.dir, opts.sessionId, now);
+  const approvals = new ApprovalBroker(config.approvalTimeoutMs, now);
+  let recent: number[] = [];
 
-export interface PolicyContext {
-  url?: string;
-  actor: string;
-  /** True when the model's rationale quotes page-derived text. */
-  tainted?: boolean;
-}
-
-export interface PolicyDecision {
-  verdict: Verdict;
-  reason: string;
-  /** Present when verdict is confirm. */
-  approvalId?: string;
-}
-
-export interface PolicyEngine {
-  preflight(action: Action, ctx: PolicyContext): PolicyDecision;
-  record(entry: Omit<AuditEntry, "seq" | "prevHash" | "hash">): AuditEntry;
-  tail(limit: number): AuditEntry[];
-  verifyChain(): { ok: boolean; brokenAt?: number; entries: number };
-  config(): PolicyConfig;
-}
-
-export interface PolicyOptions {
-  /** Directory for policy.json + audit/*.jsonl, normally ~/.zimreaper. */
-  dir: string;
-  sessionId: string;
-  config?: Partial<PolicyConfig>;
-  now?: () => number;
-}
-
-export function createPolicy(_opts: PolicyOptions): Promise<PolicyEngine> {
-  throw new ZimReaperError("UNSUPPORTED", "policy not implemented yet");
-}
-
-export function defaultPolicyConfig(): PolicyConfig {
   return {
-    mode: "standard",
-    origins: {},
-    destructivePatterns: [
-      "pay",
-      "purchase",
-      "buy now",
-      "place order",
-      "send",
-      "delete",
-      "remove",
-      "publish",
-      "post",
-      "transfer",
-      "authorize",
-      "grant access",
-    ],
-    approvalTimeoutMs: 120_000,
-    maxActionsPerMinute: 240,
-  };
-}
+    preflight(action: Action, ctx: PolicyContext): PolicyDecision {
+      const at = now();
+      recent = recent.filter((ts) => at - ts < 60_000);
+      const decision = classify(action, ctx, config, { now: at, recentActions: recent });
+      if (!isAlwaysAllowed(action.kind)) recent.push(at);
+      return decision;
+    },
 
-export function classify(_action: Action, _ctx: PolicyContext, _config: PolicyConfig): PolicyDecision {
-  throw new ZimReaperError("UNSUPPORTED", "classify not implemented yet");
+    record(entry: AuditRecordInput): AuditEntry {
+      return audit.record(entry);
+    },
+
+    tail(limit: number): AuditEntry[] {
+      return audit.tail(limit);
+    },
+
+    verifyChain(): { ok: boolean; brokenAt?: number; entries: number } {
+      return audit.verifyChain();
+    },
+
+    config(): PolicyConfig {
+      return clonePolicyConfig(config);
+    },
+
+    requestApproval(decision: PolicyDecision, meta = {}): Promise<boolean> {
+      return approvals.request(decision, meta);
+    },
+
+    resolveApproval(id: string, approved: boolean): boolean {
+      return approvals.resolve(id, approved);
+    },
+
+    onApprovalRequest(cb: (request: ApprovalRequest) => void): () => void {
+      return approvals.on(cb);
+    },
+  };
 }

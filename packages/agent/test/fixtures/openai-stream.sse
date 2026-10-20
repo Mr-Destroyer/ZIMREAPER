@@ -1,0 +1,10 @@
+data: {"id":"chatcmpl-recorded","choices":[{"index":0,"delta":{"role":"assistant","content":"Opening "},"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-recorded","choices":[{"index":0,"delta":{"content":"the page."},"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-recorded","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"browser_navigate","arguments":"{\"url\":"}}]},"finish_reason":null}],"usage":null}
+
+data: {"id":"chatcmpl-recorded","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"https://example.com\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":120,"completion_tokens":18}}
+
+data: [DONE]
+

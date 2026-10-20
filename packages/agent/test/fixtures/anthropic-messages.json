@@ -1,0 +1,17 @@
+{
+  "id": "msg_recorded",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-recorded",
+  "content": [
+    { "type": "text", "text": "I will snapshot the page." },
+    {
+      "type": "tool_use",
+      "id": "toolu_1",
+      "name": "browser_snapshot",
+      "input": { "maxChars": 8000 }
+    }
+  ],
+  "stop_reason": "tool_use",
+  "usage": { "input_tokens": 90, "output_tokens": 24 }
+}

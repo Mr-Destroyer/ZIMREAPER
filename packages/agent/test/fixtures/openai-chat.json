@@ -1,0 +1,27 @@
+{
+  "id": "chatcmpl-recorded",
+  "object": "chat.completion",
+  "created": 1730000000,
+  "model": "gpt-recorded",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Opening the page.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "browser_navigate",
+              "arguments": "{\"url\":\"https://example.com\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": { "prompt_tokens": 120, "completion_tokens": 18, "total_tokens": 138 }
+}
