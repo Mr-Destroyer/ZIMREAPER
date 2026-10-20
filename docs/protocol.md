@@ -39,7 +39,7 @@ Failure closes the socket with code 4401. Every later frame inherits the session
 ## Events
 
 ```json
-{"jsonrpc":"2.0","method":"event","params":{"kind":"action.finished","id":"a17","kind":"mouse.click","ok":true,"ms":61}}
+{"jsonrpc":"2.0","method":"event","params":{"kind":"action.finished","id":"a17","actionKind":"mouse.click","ok":true,"ms":61}}
 ```
 
 Event kinds: `tab.*`, `nav.*`, `console.message`, `net.*`, `dialog.opened`, `download.*`,

@@ -1,0 +1,48 @@
+{
+  "tabId": "t2",
+  "url": "https://example.com/orders",
+  "title": "Orders — Example",
+  "viewport": { "width": 1024, "height": 768 },
+  "scroll": { "x": 0, "y": 0, "maxY": 1200 },
+  "now": 1760000000000,
+  "boxes": {
+    "2": { "x": 0, "y": 0, "width": 1024, "height": 1968 },
+    "3": { "x": 0, "y": 0, "width": 1024, "height": 1968 },
+    "4": { "x": 32, "y": 120, "width": 960, "height": 600 },
+    "5": { "x": 32, "y": 120, "width": 960, "height": 30 },
+    "6": { "x": 32, "y": 150, "width": 960, "height": 40 },
+    "7": { "x": 32, "y": 1900, "width": 960, "height": 40 },
+    "8": { "x": 32, "y": 120, "width": 320, "height": 30 },
+    "9": { "x": 352, "y": 120, "width": 320, "height": 30 },
+    "10": { "x": 672, "y": 120, "width": 320, "height": 30 },
+    "11": { "x": 32, "y": 150, "width": 320, "height": 40 },
+    "12": { "x": 352, "y": 150, "width": 320, "height": 40 },
+    "13": { "x": 672, "y": 150, "width": 320, "height": 40 },
+    "14": { "x": 32, "y": 1900, "width": 320, "height": 40 },
+    "15": { "x": 352, "y": 1900, "width": 320, "height": 40 },
+    "16": { "x": 672, "y": 1900, "width": 320, "height": 40 }
+  },
+  "ax": [
+    {
+      "nodeId": "1",
+      "backendDOMNodeId": 2,
+      "role": { "value": "RootWebArea" },
+      "name": { "value": "Orders — Example" },
+      "childIds": ["2"]
+    },
+    { "nodeId": "2", "backendDOMNodeId": 3, "role": { "value": "generic" }, "childIds": ["3"] },
+    { "nodeId": "3", "backendDOMNodeId": 4, "role": { "value": "table" }, "childIds": ["4", "5", "6"] },
+    { "nodeId": "4", "backendDOMNodeId": 5, "role": { "value": "row" }, "childIds": ["7", "8", "9"] },
+    { "nodeId": "5", "backendDOMNodeId": 6, "role": { "value": "row" }, "childIds": ["10", "11", "12"] },
+    { "nodeId": "6", "backendDOMNodeId": 7, "role": { "value": "row" }, "childIds": ["13", "14", "15"] },
+    { "nodeId": "7", "backendDOMNodeId": 8, "role": { "value": "columnheader" }, "name": { "value": "Order" } },
+    { "nodeId": "8", "backendDOMNodeId": 9, "role": { "value": "columnheader" }, "name": { "value": "Total" } },
+    { "nodeId": "9", "backendDOMNodeId": 10, "role": { "value": "columnheader" }, "name": { "value": "Status" } },
+    { "nodeId": "10", "backendDOMNodeId": 11, "role": { "value": "cell" }, "name": { "value": "A-1001" } },
+    { "nodeId": "11", "backendDOMNodeId": 12, "role": { "value": "cell" }, "name": { "value": "$42.00" } },
+    { "nodeId": "12", "backendDOMNodeId": 13, "role": { "value": "link" }, "name": { "value": "Shipped" } },
+    { "nodeId": "13", "backendDOMNodeId": 14, "role": { "value": "cell" }, "name": { "value": "A-1002" } },
+    { "nodeId": "14", "backendDOMNodeId": 15, "role": { "value": "cell" }, "name": { "value": "$7.50" } },
+    { "nodeId": "15", "backendDOMNodeId": 16, "role": { "value": "link" }, "name": { "value": "Pending" } }
+  ]
+}

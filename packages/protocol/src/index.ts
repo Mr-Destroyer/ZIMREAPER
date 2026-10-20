@@ -660,11 +660,11 @@ export const EventSchema = z.discriminatedUnion("kind", [
   }),
   ev("download.started", { tabId: z.string(), url: z.string(), filename: z.string() }),
   ev("download.finished", { tabId: z.string(), path: z.string(), state: z.string() }),
-  ev("action.started", { id: z.string(), tabId: z.string().optional(), kind: z.string() }),
+  ev("action.started", { id: z.string(), tabId: z.string().optional(), actionKind: z.string() }),
   ev("action.finished", {
     id: z.string(),
     tabId: z.string().optional(),
-    kind: z.string(),
+    actionKind: z.string(),
     ok: z.boolean(),
     ms: z.number(),
   }),

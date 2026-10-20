@@ -1,0 +1,105 @@
+{
+  "tabId": "t1",
+  "url": "https://example.com/login",
+  "title": "Sign in — Example",
+  "viewport": { "width": 1280, "height": 800 },
+  "scroll": { "x": 0, "y": 0, "maxY": 2000 },
+  "now": 1760000000000,
+  "boxes": {
+    "2": { "x": 0, "y": 0, "width": 1280, "height": 2400 },
+    "3": { "x": 0, "y": 0, "width": 1280, "height": 2400 },
+    "4": { "x": 412, "y": 280, "width": 240, "height": 40 },
+    "9": { "x": 412, "y": 250, "width": 240, "height": 20 },
+    "5": { "x": 412, "y": 318, "width": 240, "height": 36 },
+    "6": { "x": 412, "y": 368, "width": 240, "height": 36 },
+    "7": { "x": 412, "y": 428, "width": 240, "height": 40 },
+    "8": { "x": 470, "y": 486, "width": 96, "height": 18 },
+    "10": { "x": 0, "y": 0, "width": 0, "height": 0 },
+    "13": { "x": 412, "y": 1800, "width": 240, "height": 40 },
+    "14": { "x": 412, "y": 300, "width": 240, "height": 40 }
+  },
+  "ax": [
+    {
+      "nodeId": "1",
+      "backendDOMNodeId": 2,
+      "role": { "value": "RootWebArea" },
+      "name": { "value": "Sign in — Example" },
+      "childIds": ["2"]
+    },
+    {
+      "nodeId": "2",
+      "backendDOMNodeId": 3,
+      "role": { "value": "generic" },
+      "childIds": ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"]
+    },
+    {
+      "nodeId": "3",
+      "backendDOMNodeId": 4,
+      "role": { "value": "heading" },
+      "name": { "value": "Sign in" }
+    },
+    {
+      "nodeId": "4",
+      "backendDOMNodeId": 9,
+      "role": { "value": "StaticText" },
+      "name": { "value": "Welcome back" }
+    },
+    {
+      "nodeId": "5",
+      "backendDOMNodeId": 5,
+      "role": { "value": "textbox" },
+      "name": { "value": "Email" },
+      "value": { "value": "" }
+    },
+    {
+      "nodeId": "6",
+      "backendDOMNodeId": 6,
+      "role": { "value": "textbox" },
+      "name": { "value": "Password" },
+      "value": { "value": "" }
+    },
+    {
+      "nodeId": "7",
+      "backendDOMNodeId": 7,
+      "role": { "value": "button" },
+      "name": { "value": "Sign in" }
+    },
+    {
+      "nodeId": "8",
+      "backendDOMNodeId": 8,
+      "role": { "value": "link" },
+      "name": { "value": "Forgot password?" }
+    },
+    {
+      "nodeId": "9",
+      "backendDOMNodeId": 10,
+      "role": { "value": "generic" },
+      "ignored": true
+    },
+    {
+      "nodeId": "10",
+      "backendDOMNodeId": 11,
+      "role": { "value": "button" },
+      "name": { "value": "Hidden action" }
+    },
+    {
+      "nodeId": "11",
+      "backendDOMNodeId": 12,
+      "role": { "value": "link" },
+      "name": { "value": "Detached" }
+    },
+    {
+      "nodeId": "12",
+      "backendDOMNodeId": 13,
+      "role": { "value": "button" },
+      "name": { "value": "Load more" }
+    },
+    {
+      "nodeId": "13",
+      "backendDOMNodeId": 14,
+      "role": { "value": "button" },
+      "name": { "value": "Ignored button" },
+      "ignored": true
+    }
+  ]
+}
