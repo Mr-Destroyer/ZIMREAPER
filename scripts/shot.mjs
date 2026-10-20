@@ -1,7 +1,8 @@
 import { _electron as electron } from "playwright";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = "/home/zim/Projects/ZIMREAPER";
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = await electron.launch({
   executablePath: path.join(ROOT, "node_modules/electron/dist/electron"),
   args: [path.join(ROOT, "apps/desktop"), "--no-sandbox", "--ozone-platform=x11"],

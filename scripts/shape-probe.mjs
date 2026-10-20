@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-const ROOT = "/home/zim/Projects/ZIMREAPER";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const core = await import(path.join(ROOT, "packages/core/dist/index.js"));
 const fx = spawn(process.execPath, [path.join(ROOT, "fixtures/site/server.mjs")], { env: { ...process.env, PORT: "4319" }, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 700));

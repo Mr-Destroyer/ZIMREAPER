@@ -26,7 +26,7 @@ headless Chromium and serves the same tools without the desktop shell.
 ## Claude Code
 
 ```bash
-claude mcp add zimreaper -- node /home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js mcp
+claude mcp add zimreaper -- node /path/to/ZIMREAPER/packages/cli/dist/bin.js mcp
 ```
 
 Or over HTTP (the app must be running):
@@ -45,7 +45,7 @@ claude mcp add --transport http zimreaper http://127.0.0.1:7421/mcp/<path-token>
   "mcpServers": {
     "zimreaper": {
       "command": "node",
-      "args": ["/home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js", "mcp"]
+      "args": ["/path/to/ZIMREAPER/packages/cli/dist/bin.js", "mcp"]
     }
   }
 }
@@ -55,14 +55,14 @@ claude mcp add --transport http zimreaper http://127.0.0.1:7421/mcp/<path-token>
 
 ```bash
 hermes mcp add zimreaper --command node \
-  --args /home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js mcp
+  --args /path/to/ZIMREAPER/packages/cli/dist/bin.js mcp
 hermes mcp test zimreaper
 ```
 
 ## Codex CLI
 
 ```bash
-codex mcp add zimreaper -- node /home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js mcp
+codex mcp add zimreaper -- node /path/to/ZIMREAPER/packages/cli/dist/bin.js mcp
 ```
 
 Equivalent `~/.codex/config.toml` block:
@@ -70,7 +70,7 @@ Equivalent `~/.codex/config.toml` block:
 ```toml
 [mcp_servers.zimreaper]
 command = "node"
-args = ["/home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js", "mcp"]
+args = ["/path/to/ZIMREAPER/packages/cli/dist/bin.js", "mcp"]
 startup_timeout_sec = 20
 ```
 
@@ -83,7 +83,7 @@ startup_timeout_sec = 20
   "mcp": {
     "zimreaper": {
       "type": "local",
-      "command": ["node", "/home/zim/Projects/ZIMREAPER/packages/cli/dist/bin.js", "mcp"],
+      "command": ["node", "/path/to/ZIMREAPER/packages/cli/dist/bin.js", "mcp"],
       "enabled": true
     }
   }

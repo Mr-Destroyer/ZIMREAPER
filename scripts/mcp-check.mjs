@@ -5,10 +5,11 @@
  */
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
-const ROOT = "/home/zim/Projects/ZIMREAPER";
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = "4316";
 const fx = spawn(process.execPath, [path.join(ROOT, "fixtures/site/server.mjs")], {
   env: { ...process.env, PORT },
