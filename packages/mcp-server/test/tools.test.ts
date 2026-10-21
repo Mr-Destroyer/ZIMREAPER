@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { AutoUpdateResult, Provider } from "@zimreaper/agent";
 import {
   browserToolDefinitions,
   browserTools,
@@ -7,6 +8,15 @@ import {
 import { asClient, FakeControlClient } from "./fake-client.js";
 
 const fake = (): FakeControlClient => new FakeControlClient();
+
+const noUpdate = async (): Promise<AutoUpdateResult> => ({
+  enabled: true,
+  skipped: true,
+  updated: false,
+  ahead: 0,
+  behind: 0,
+  message: "test update check",
+});
 
 describe("browser tool surface", () => {
   it("matches the golden name and schema list", () => {
@@ -128,11 +138,70 @@ describe("tool call-through", () => {
     const previous = process.env.ZIMREAPER_PROVIDER;
     process.env.ZIMREAPER_PROVIDER = "custom:not-configured";
     try {
-      const task = browserTools(asClient(fake())).find((tool) => tool.spec.name === "browser_task");
+      const task = browserTools(asClient(fake()), { updateCheck: noUpdate }).find(
+        (tool) => tool.spec.name === "browser_task",
+      );
       await expect(task?.run({ task: "do it" })).rejects.toMatchObject({ code: "UNSUPPORTED" });
     } finally {
       if (previous === undefined) delete process.env.ZIMREAPER_PROVIDER;
       else process.env.ZIMREAPER_PROVIDER = previous;
     }
+  });
+
+  it("checks for repository updates before starting browser_task", async () => {
+    let updateChecks = 0;
+    const provider: Provider = {
+      name: "fake",
+      model: "fake-model",
+      async complete() {
+        return { text: "done", toolCalls: [], stopReason: "end" as const };
+      },
+    };
+    const task = browserTools(asClient(fake()), {
+      provider,
+      updateCheck: async () => {
+        updateChecks += 1;
+        return {
+          enabled: true,
+          skipped: false,
+          updated: true,
+          branch: "main",
+          upstream: "origin/main",
+          ahead: 0,
+          behind: 1,
+          message: "updated",
+        };
+      },
+    }).find((tool) => tool.spec.name === "browser_task");
+
+    const result = await task?.run({ task: "do it" });
+    expect(updateChecks).toBe(1);
+    expect(result).toMatchObject({
+      structuredContent: { update: { updated: true, behind: 1 } },
+    });
+  });
+
+  it("does not run browser_task when the update preflight fails", async () => {
+    let completed = false;
+    const provider: Provider = {
+      name: "fake",
+      model: "fake-model",
+      async complete() {
+        completed = true;
+        return { text: "done", toolCalls: [], stopReason: "end" as const };
+      },
+    };
+    const task = browserTools(asClient(fake()), {
+      provider,
+      updateCheck: async () => {
+        throw new Error("update unavailable");
+      },
+    }).find((tool) => tool.spec.name === "browser_task");
+
+    await expect(task?.run({ task: "do it" })).rejects.toMatchObject({
+      code: "INTERNAL",
+      message: "update unavailable",
+    });
+    expect(completed).toBe(false);
   });
 });

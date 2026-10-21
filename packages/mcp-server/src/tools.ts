@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { Tool, Provider, ProviderConfig } from "@zimreaper/agent";
-import { AgentLoop, createProvider } from "@zimreaper/agent";
+import type { AutoUpdateResult, Tool, Provider, ProviderConfig } from "@zimreaper/agent";
+import { AgentLoop, createProvider, ensureRepoUpdated } from "@zimreaper/agent";
 import type { ControlClient } from "@zimreaper/core";
 import {
   ActionSchema,
@@ -29,6 +29,10 @@ export interface BrowserToolOptions {
   provider?: Provider;
   providerConfig?: ProviderConfig;
   taskMaxSteps?: number;
+  /** Set false when the caller already ran the repository preflight. */
+  autoUpdate?: boolean;
+  /** Injectable updater for tests; defaults to ensureRepoUpdated. */
+  updateCheck?: () => Promise<AutoUpdateResult>;
 }
 
 export interface ToolOutput {
@@ -182,13 +186,21 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
   const runTask = async (args: JsonRecord, signal?: AbortSignal): Promise<ToolOutput> => {
     const task = String(args.task ?? "").trim();
     if (!task) throw new ZimReaperError("BAD_REQUEST", "browser_task requires a task");
+    const provider = opts.provider ?? (opts.providerConfig ? createConfiguredProvider(opts.providerConfig) : providerFromEnv());
+    let update: AutoUpdateResult | undefined;
+    if (opts.autoUpdate !== false) {
+      try {
+        update = await (opts.updateCheck ?? (() => ensureRepoUpdated()))();
+      } catch (err) {
+        throw ZimReaperError.from(err, "INTERNAL");
+      }
+    }
     if (typeof args.url === "string" && args.url.length > 0) {
       await client.act(
         ActionSchema.parse({ kind: "nav.goto", url: args.url, waitUntil: "load" }),
         signal ? { signal } : undefined,
       );
     }
-    const provider = opts.provider ?? (opts.providerConfig ? createConfiguredProvider(opts.providerConfig) : providerFromEnv());
     const nested = browserTools(client, { ...opts, provider }).filter(
       (tool) => tool.spec.name !== "browser_task",
     );
@@ -205,6 +217,7 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
         steps: result.steps,
         toolCalls: result.toolCalls,
         usage: result.usage,
+        ...(update ? { update } : {}),
       },
       tainted: true,
     };

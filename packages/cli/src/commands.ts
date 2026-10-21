@@ -3,7 +3,12 @@
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { AgentLoop, createProvider, type AgentEvent } from "@zimreaper/agent";
+import {
+  AgentLoop,
+  createProvider,
+  ensureRepoUpdated,
+  type AgentEvent,
+} from "@zimreaper/agent";
 import {
   CONTROL_PORT,
   ControlClient,
@@ -303,6 +308,12 @@ async function commandRun(parsed: ParsedArgs): Promise<number> {
   if (!task || task.trim().length === 0) {
     throw new ZimReaperError("BAD_REQUEST", 'run requires a task: zimreaper run "<task>"');
   }
+  const update = await ensureRepoUpdated(
+    parsed.flags.get("no-update") === true ? { enabled: false } : {},
+  );
+  if (update.enabled && !update.skipped) {
+    process.stderr.write(`[update] ${update.message}\n`);
+  }
   const { kind, model } = providerSpec(parsed.flags);
   const baseUrl = env("ZIMREAPER_BASE_URL");
   const provider = createProvider({ kind, model, ...(baseUrl ? { baseUrl } : {}) });
@@ -319,7 +330,7 @@ async function commandRun(parsed: ParsedArgs): Promise<number> {
       try {
         const loop = new AgentLoop({
           provider,
-          tools: browserTools(client, { provider }),
+          tools: browserTools(client, { provider, autoUpdate: false }),
           maxSteps,
           onEvent(event) {
             const line = eventLine(event);
