@@ -92,6 +92,24 @@ function isHttp(url: URL): boolean {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
+/**
+ * `about:blank` and `about:srcdoc` hold no content of their own and inherit the
+ * origin of whoever created them, so they carry no origin risk. Blocking them
+ * made every idle tab unusable (reload/snapshot of a fresh tab failed).
+ */
+const INERT_INTERNAL_URLS: ReadonlySet<string> = new Set(["about:blank", "about:srcdoc"]);
+
+function isInertInternal(url: URL): boolean {
+  return INERT_INTERNAL_URLS.has(`${url.protocol}${url.pathname}`.toLowerCase());
+}
+
+/** Tab bookkeeping on a blank tab touches no document content. */
+const INERT_DOCUMENT_KINDS: ReadonlySet<Action["kind"]> = new Set<Action["kind"]>([
+  "tab.new",
+  "tab.close",
+  "tab.activate",
+]);
+
 function targetUrl(action: Action, ctx: PolicyContext): string | undefined {
   if (action.kind === "nav.goto") return action.url;
   if (action.kind === "tab.new" && action.url !== undefined) return action.url;
@@ -254,7 +272,14 @@ export function classify(
     }
     if (!isHttp(parsedTarget)) {
       if (config.mode !== "permissive") {
-        return block(`non-http(s) origin ${parsedTarget.protocol} is blocked`);
+        if (!isInertInternal(parsedTarget)) {
+          return block(`non-http(s) origin ${parsedTarget.protocol} is blocked`);
+        }
+        if (INERT_DOCUMENT_KINDS.has(action.kind)) {
+          return allow(`${action.kind} on inert internal document ${parsedTarget.href}`);
+        }
+        // An inert document has no origin of its own: observe it, never mutate it.
+        return classifyAtTier(action, { tier: "read" }, parsedTarget.href, ctx.url);
       }
       return allow(`permissive mode allows non-http(s) origin ${parsedTarget.protocol}`);
     }
