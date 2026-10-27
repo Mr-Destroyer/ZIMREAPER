@@ -597,7 +597,16 @@ function makeDefinitions(client: ControlClient, opts: BrowserToolOptions): ToolD
       async run(args, signal) {
         if (args.op === "list") {
           const res = await query(client, QuerySchema.parse({ kind: "tab.list" }), signal, args.tabId);
-          return { text: tabTable(res), structuredContent: { tabs: Array.isArray(res) ? res : [] } };
+          const tabs = Array.isArray(res)
+            ? res
+            : isRecord(res) && Array.isArray(res.tabs)
+              ? res.tabs
+              : [];
+          const activeTabId = isRecord(res) && typeof res.activeTabId === "string" ? res.activeTabId : undefined;
+          return {
+            text: tabTable(res),
+            structuredContent: { tabs, ...(activeTabId === undefined ? {} : { activeTabId }) },
+          };
         }
         if (args.op === "new") {
           const res = await client.act(

@@ -92,24 +92,31 @@ describe("tool call-through", () => {
 
   it("lists tabs as a table", async () => {
     const client = new FakeControlClient({
-      queryResult: [
-        {
-          tabId: "t1",
-          url: "https://example.com",
-          title: "Example",
-          active: true,
-          partition: "default",
-          loading: false,
-          canGoBack: false,
-          canGoForward: false,
-          createdAt: 1,
-        },
-      ],
+      queryResult: {
+        tabs: [
+          {
+            tabId: "t1",
+            url: "https://example.com",
+            title: "Example",
+            active: true,
+            partition: "default",
+            loading: false,
+            canGoBack: false,
+            canGoForward: false,
+            createdAt: 1,
+          },
+        ],
+        activeTabId: "t1",
+      },
     });
     const tabs = browserTools(asClient(client)).find((tool) => tool.spec.name === "browser_tabs");
     const result = await tabs?.run({ op: "list" });
     expect(client.calls[0]?.payload).toEqual({ kind: "tab.list" });
     expect(result).toMatchObject({ text: expect.stringContaining("Example") });
+    expect(result?.structuredContent).toMatchObject({
+      tabs: [expect.objectContaining({ tabId: "t1" })],
+      activeTabId: "t1",
+    });
   });
 
   it("maps browser_nav reload and browser_wait conditions", async () => {
