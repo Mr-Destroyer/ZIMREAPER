@@ -20,6 +20,7 @@ import {
   mouseWheel,
   nav,
   navGoto,
+  navReload,
   netHar,
   netReplay,
   netRoute,
@@ -31,6 +32,7 @@ import {
   sessionCancel,
   sessionKill,
   storageLocal,
+  tabNew,
 } from "./helpers.js";
 
 interface Case {
@@ -82,6 +84,28 @@ const cases: Case[] = [
     config: permissive,
     verdict: "allow",
   },
+  {
+    name: "allows reload on an inert about:blank tab",
+    action: navReload(),
+    context: ctx("about:blank"),
+    config: standard,
+    verdict: "allow",
+  },
+  {
+    name: "allows opening an about:blank tab",
+    action: tabNew("about:blank"),
+    context: site,
+    config: standard,
+    verdict: "allow",
+  },
+  {
+    name: "blocks clicks on an inert about:blank tab",
+    action: click(),
+    context: ctx("about:blank"),
+    config: standard,
+    verdict: "block",
+  },
+  { name: "still blocks about:config", action: navGoto("about:config"), context: site, config: standard, verdict: "block" },
 
   { name: "read tier allows navigation", action: navGoto("https://example.com/next"), context: site, config: read, verdict: "allow" },
   { name: "read tier allows back", action: nav("nav.back"), context: site, config: read, verdict: "allow" },

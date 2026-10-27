@@ -61,6 +61,10 @@ export function navReload(): Action {
   return { kind: "nav.reload", ignoreCache: false };
 }
 
+export function tabNew(url?: string): Action {
+  return url === undefined ? { kind: "tab.new", active: true } : { kind: "tab.new", url, active: true };
+}
+
 export function mouseMove(): Action {
   return { kind: "mouse.move", to: { x: 10, y: 20 }, steps: 4, durationMs: 10 };
 }
